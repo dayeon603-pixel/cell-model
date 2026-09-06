@@ -157,10 +157,13 @@ new THREE.GLTFLoader().load("cell.glb",function(gltf){
     if(o.material){o.material.side=THREE.DoubleSide;o.material.envMapIntensity=.55;}
   });
   scene.add(root);
+  var sph=new THREE.Box3().setFromObject(root).getBoundingSphere(new THREE.Sphere());
+  var fit=sph.radius/Math.sin(camera.fov*Math.PI/360)*0.72;
+  goal.r=fit; cam.r=fit*1.25;
   document.getElementById("boot").classList.add("gone");
 },undefined,function(){document.getElementById("boot").textContent="Could not load cell.glb";});
 
-var cam={th:-0.85,ph:1.15,r:34,t:new THREE.Vector3()},goal={th:-0.85,ph:1.15,r:28},spin=true;
+var cam={th:0.86,ph:1.16,r:34,t:new THREE.Vector3()},goal={th:0.86,ph:1.16,r:27},spin=true;
 function place(){cam.ph=Math.max(.15,Math.min(Math.PI-.15,cam.ph));
   camera.position.set(cam.r*Math.sin(cam.ph)*Math.cos(cam.th),cam.r*Math.cos(cam.ph),cam.r*Math.sin(cam.ph)*Math.sin(cam.th));
   camera.lookAt(cam.t);}
@@ -203,7 +206,7 @@ rail.addEventListener("click",function(e){var b=e.target.closest(".kb");if(b)sel
 document.getElementById("bSpin").addEventListener("click",function(){
   spin=!spin;this.setAttribute("aria-pressed",spin?"true":"false");});
 document.getElementById("bReset").addEventListener("click",function(){
-  goal.th=-0.85;goal.ph=1.15;goal.r=28;card.classList.remove("on");
+  goal.th=0.86;goal.ph=1.16;goal.r=27;card.classList.remove("on");
   var b=rail.querySelectorAll(".kb");for(var i=0;i<b.length;i++)b[i].setAttribute("aria-current","false");});
 
 function resize(){var w=app.clientWidth,h=app.clientHeight;if(!w||!h)return;
