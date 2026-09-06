@@ -1,0 +1,1389 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="A living animal cell in 3D: eight organelles at work.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔬</text></svg>">
+<style>:root{color-scheme:light dark}html,body{margin:0;padding:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Cytology Plate One</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Source+Sans+3:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+:root{
+  --scope:#F2F5F8; --ink:#101419; --ink-2:#4C5665; --ink-3:#7A8593;
+  --panel:rgba(255,255,255,.86); --panel-solid:#FFFFFF; --edge:rgba(16,20,25,.14); --edge-2:rgba(16,20,25,.28);
+  --shadow:0 6px 28px rgba(16,24,40,.13);
+  --membrane:#C94D71; --nucleus:#6F4FCC; --ribosome:#B0810C; --rer:#1F72B6;
+  --ser:#0E8C7A; --golgi:#B96513; --mito:#2B8F40; --lysosome:#BC332F;
+  --f-display:"Zilla Slab", Georgia, serif;
+  --f-body:"Source Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --scope:#05070C; --ink:#EAEDF2; --ink-2:#9AA5B4; --ink-3:#6B7585;
+    --panel:rgba(12,16,24,.82); --panel-solid:#0E131C; --edge:rgba(234,237,242,.16); --edge-2:rgba(234,237,242,.32);
+    --shadow:0 6px 30px rgba(0,0,0,.55);
+    --membrane:#E86C89; --nucleus:#9575E8; --ribosome:#F5C654; --rer:#54A0DE;
+    --ser:#5BCFBD; --golgi:#F09547; --mito:#6BCB72; --lysosome:#E25C57;
+  }
+}
+:root[data-theme="dark"]{
+  --scope:#05070C; --ink:#EAEDF2; --ink-2:#9AA5B4; --ink-3:#6B7585;
+  --panel:rgba(12,16,24,.82); --panel-solid:#0E131C; --edge:rgba(234,237,242,.16); --edge-2:rgba(234,237,242,.32);
+  --shadow:0 6px 30px rgba(0,0,0,.55);
+  --membrane:#E86C89; --nucleus:#9575E8; --ribosome:#F5C654; --rer:#54A0DE;
+  --ser:#5BCFBD; --golgi:#F09547; --mito:#6BCB72; --lysosome:#E25C57;
+}
+
+*{box-sizing:border-box}
+body{margin:0; background:var(--scope); color:var(--ink); font-family:var(--f-body); -webkit-font-smoothing:antialiased; overflow:hidden}
+:focus-visible{outline:2px solid var(--rer); outline-offset:2px}
+
+.app{position:relative; width:100%; height:100vh; min-height:560px; overflow:hidden; background:var(--scope)}
+canvas{display:block; width:100%; height:100%; cursor:grab; touch-action:none}
+canvas:active{cursor:grabbing}
+
+/* ── overlays ── */
+.plate-edge{position:absolute; width:18px; height:18px; border:1px solid var(--edge-2); pointer-events:none}
+.plate-edge.tl{top:14px;left:14px;border-right:0;border-bottom:0}
+.plate-edge.tr{top:14px;right:14px;border-left:0;border-bottom:0}
+.plate-edge.bl{bottom:14px;left:14px;border-right:0;border-top:0}
+.plate-edge.br{bottom:14px;right:14px;border-left:0;border-top:0}
+
+.title{position:absolute; top:26px; left:30px; pointer-events:none; max-width:46%}
+.title h1{margin:0; font-family:var(--f-display); font-size:23px; font-weight:700; letter-spacing:-.01em; line-height:1.1}
+.title h1 span{color:var(--ink-3); font-weight:500}
+.title .sub{margin-top:5px; font-family:var(--f-mono); font-size:10.5px; letter-spacing:.11em; color:var(--ink-3)}
+
+/* ── annotation layer ── */
+#annots{position:absolute; inset:0; pointer-events:none; overflow:hidden}
+#leads{position:absolute; inset:0; width:100%; height:100%}
+.tag{
+  position:absolute; transform:translate(-50%,-50%); white-space:nowrap;
+  font-family:var(--f-mono); font-size:10.5px; letter-spacing:.05em;
+  background:var(--panel); backdrop-filter:blur(6px); border:1px solid currentColor;
+  padding:3px 8px; border-radius:2px; opacity:0; transition:opacity .2s ease;
+}
+.tag.on{opacity:1}
+.tag i{display:inline-block; width:6px; height:6px; border-radius:50%; background:currentColor; margin-right:6px}
+.tag b{color:var(--ink); font-weight:500}
+
+.callout{
+  position:absolute; width:310px; max-width:44vw; opacity:0; transition:opacity .22s ease;
+  background:var(--panel); backdrop-filter:blur(10px);
+  border:1px solid var(--edge); border-left:3px solid var(--c, var(--ink));
+  box-shadow:var(--shadow); padding:14px 16px 15px; border-radius:2px;
+}
+.callout.on{opacity:1}
+.callout .num{font-family:var(--f-mono); font-size:10px; letter-spacing:.13em; color:var(--c); text-transform:uppercase}
+.callout h2{margin:2px 0 0; font-family:var(--f-display); font-size:19px; font-weight:600; line-height:1.15; color:var(--ink)}
+.callout .sub{font-family:var(--f-mono); font-size:10px; letter-spacing:.06em; color:var(--ink-3); text-transform:uppercase; margin-top:3px}
+.callout p{margin:9px 0 0; font-size:13.5px; line-height:1.5; color:var(--ink-2)}
+.callout p strong{color:var(--ink); font-weight:600}
+.callout .doing{
+  margin-top:11px; padding-top:9px; border-top:1px solid var(--edge);
+  font-family:var(--f-mono); font-size:10.5px; line-height:1.5; color:var(--c);
+  letter-spacing:.02em;
+}
+.callout .doing b{display:block; color:var(--ink-3); letter-spacing:.12em; text-transform:uppercase; font-size:9.5px; margin-bottom:3px}
+.callout dl{display:grid; grid-template-columns:auto 1fr; gap:2px 12px; margin:10px 0 0; font-family:var(--f-mono); font-size:10.5px}
+.callout dt{color:var(--ink-3); text-transform:uppercase; letter-spacing:.07em; font-size:9.5px; padding-top:1px}
+.callout dd{margin:0; color:var(--ink-2); font-variant-numeric:tabular-nums}
+
+/* ── key rail ── */
+.rail{
+  position:absolute; top:26px; right:26px; width:238px;
+  background:var(--panel); backdrop-filter:blur(10px); border:1px solid var(--edge);
+  box-shadow:var(--shadow); border-radius:2px; padding:10px; display:flex; flex-direction:column; gap:2px;
+}
+.rail .hd{font-family:var(--f-mono); font-size:9.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3); padding:2px 4px 6px}
+.keybtn{
+  display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:9px;
+  background:transparent; border:0; border-left:2px solid transparent; padding:5px 6px;
+  font-family:var(--f-body); font-size:13px; color:var(--ink); text-align:left; cursor:pointer; border-radius:2px;
+}
+.keybtn:hover{background:var(--edge)}
+.keybtn .dot{width:8px; height:8px; border-radius:50%; background:var(--c)}
+.keybtn .n{font-family:var(--f-mono); font-size:9.5px; color:var(--ink-3)}
+.keybtn[aria-current="true"]{background:var(--panel-solid); border-left-color:var(--c); font-weight:600}
+
+/* ── controls ── */
+.dock{
+  position:absolute; left:30px; bottom:26px; display:flex; flex-wrap:wrap; gap:5px; align-items:center;
+  max-width:calc(100% - 60px);
+}
+.btn{
+  font-family:var(--f-mono); font-size:10px; letter-spacing:.09em; text-transform:uppercase;
+  background:var(--panel); backdrop-filter:blur(8px); color:var(--ink-2);
+  border:1px solid var(--edge); padding:7px 11px; border-radius:2px; cursor:pointer;
+  transition:color .15s, border-color .15s, background .15s;
+}
+.btn:hover{color:var(--ink); border-color:var(--edge-2)}
+.btn[aria-pressed="true"]{color:var(--ink); border-color:var(--ink); background:var(--panel-solid)}
+
+.readout{
+  position:absolute; right:26px; bottom:26px; text-align:right; pointer-events:none;
+  font-family:var(--f-mono); font-size:10px; letter-spacing:.06em; color:var(--ink-3); line-height:1.85;
+}
+.readout b{color:var(--ink-2); font-weight:500; font-variant-numeric:tabular-nums}
+
+.scalebar{position:absolute; left:30px; bottom:74px; pointer-events:none; font-family:var(--f-mono); font-size:9.5px; color:var(--ink-3); letter-spacing:.09em}
+.scalebar .r{height:4px; border:1px solid currentColor; border-top:0; margin-bottom:3px}
+
+.narrate{
+  position:absolute; left:50%; bottom:78px; transform:translateX(-50%);
+  width:min(560px, calc(100% - 60px)); pointer-events:none;
+  background:var(--panel); backdrop-filter:blur(10px); border:1px solid var(--edge);
+  border-left:3px solid var(--rer); box-shadow:var(--shadow); border-radius:2px;
+  padding:11px 15px 12px; opacity:0; transition:opacity .25s ease;
+}
+.narrate.on{opacity:1}
+.narrate b{display:block; font-family:var(--f-mono); font-size:9.5px; letter-spacing:.13em;
+  text-transform:uppercase; color:var(--rer); margin-bottom:3px}
+.narrate span{font-size:14px; line-height:1.45; color:var(--ink)}
+
+.boot{position:absolute; inset:0; display:grid; place-content:center; background:var(--scope); color:var(--ink-3);
+  font-family:var(--f-mono); font-size:10.5px; letter-spacing:.18em; text-transform:uppercase; transition:opacity .6s ease}
+.boot.gone{opacity:0; pointer-events:none}
+
+@media (max-width:820px){
+  .rail{top:auto; bottom:88px; right:14px; width:190px; padding:8px}
+  .title{max-width:60%; left:18px; top:18px}
+  .title h1{font-size:18px}
+  .dock{left:16px; bottom:16px}
+  .readout{display:none}
+  .scalebar{left:16px; bottom:64px}
+  .callout{width:250px}
+}
+@media (prefers-reduced-motion: reduce){ .tag,.callout{transition-duration:.01ms} }
+</style>
+
+<div class="app" id="app">
+  <canvas id="cv" aria-label="Animated three-dimensional model of a living animal cell showing eight organelles at work."></canvas>
+  <div class="plate-edge tl"></div><div class="plate-edge tr"></div>
+  <div class="plate-edge bl"></div><div class="plate-edge br"></div>
+
+  <div class="title">
+    <h1>Cytology Plate One <span>/ Animal cell</span></h1>
+    <div class="sub">SPECIMEN A-1 · ø 20 µm · LIVING SECTION · 8 STRUCTURES</div>
+  </div>
+
+  <div id="annots"><svg id="leads" aria-hidden="true"></svg></div>
+
+  <div class="rail" id="rail"><div class="hd">Key to structures</div></div>
+
+  <div class="dock">
+    <button class="btn" id="bFollow" type="button" aria-pressed="false">Follow one protein</button>
+    <button class="btn" id="bLabels" type="button" aria-pressed="true">All labels</button>
+    <button class="btn" id="bCut" type="button" aria-pressed="true">Cutaway</button>
+    <button class="btn" id="bSpeed" type="button">Speed 1.0×</button>
+    <button class="btn" id="bPause" type="button" aria-pressed="false">Pause</button>
+    <button class="btn" id="bReset" type="button">Reset view</button>
+        <a class="btn" href="index.html" style="text-decoration:none">Sculpt version →</a>
+  </div>
+
+  <div class="scalebar"><div class="r" id="sbar" style="width:76px"></div><span id="sbarL">2 µm</span></div>
+
+  <div class="narrate" id="narrate"></div>
+  <div class="readout" id="readout"></div>
+  <div class="boot" id="boot">Culturing specimen…</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+"use strict";
+
+/* ══════════════════════════════════════════════════════════════
+   CONTENT
+   ══════════════════════════════════════════════════════════════ */
+var ORG = [
+  { key:"membrane", name:"Plasma membrane", sub:"Phospholipid bilayer", varname:"--membrane",
+    text:"A double layer of phospholipids, <strong>7 nm thick</strong>, that blocks ions and polar molecules by default. Channels let chosen ions flow down their gradient, pumps burn ATP to push them back, and receptors read signals from outside without letting the signal in.",
+    doing:"Channels moving ions across · vesicles fusing and releasing cargo outside",
+    data:[["Thickness","7–8 nm"],["ATP cost","20–30% at rest"],["Model","Singer & Nicolson 1972"]] },
+
+  { key:"nucleus", name:"Nucleus", sub:"With nucleolus and envelope", varname:"--nucleus",
+    text:"Holds <strong>2 metres of DNA</strong> as chromatin inside a double membrane pierced by thousands of pore complexes. Genes are transcribed and the RNA edited here; only finished messenger RNA is exported. The dense nucleolus builds ribosome subunits.",
+    doing:"Transcribing genes · exporting mRNA strands through nuclear pores",
+    data:[["Diameter","5–10 µm"],["DNA","≈2 m per cell"],["Pores","2,000–4,000"]] },
+
+  { key:"ribosome", name:"Ribosomes", sub:"Free and membrane-bound", varname:"--ribosome",
+    text:"Reads messenger RNA three bases at a time and forges a peptide bond for each one, at <strong>15–20 amino acids per second</strong>. The catalytic site is made of RNA, not protein. Free ribosomes make proteins that stay inside; bound ones make proteins for export.",
+    doing:"Translating mRNA · polypeptide chains growing out of the exit tunnel",
+    data:[["Size","25–30 nm"],["Count","≈10 million"],["Form","80S (60S + 40S)"]] },
+
+  { key:"rer", name:"Rough ER", sub:"Ribosome-studded cisternae", varname:"--rer",
+    text:"Flattened sacs continuous with the nuclear envelope. New proteins are threaded straight through the membrane as they are built, then folded by chaperones and sugar-coated inside. <strong>Anything misfolded is pulled back out and destroyed.</strong>",
+    doing:"Folding new protein · budding transport vesicles toward the Golgi",
+    data:[["Membrane","≈50% of cell total"],["Traffic","≈1/3 of all proteins"],["Found","Porter & Claude 1945"]] },
+
+  { key:"ser", name:"Smooth ER", sub:"Ribosome-free tubules", varname:"--ser",
+    text:"Builds the phospholipids every membrane is made of and the steroid hormones. Detoxifies drugs through cytochrome P450. Stores calcium at up to <strong>10,000× the cytosol concentration</strong> and dumps it on command.",
+    doing:"Releasing Ca²⁺ pulses into the cytosol · synthesising lipid",
+    data:[["Tubules","30–100 nm"],["Ca²⁺","10,000× gradient"],["In muscle","Sarcoplasmic reticulum"]] },
+
+  { key:"golgi", name:"Golgi apparatus", sub:"Cis-to-trans stack", varname:"--golgi",
+    text:"Cargo enters at the <strong>cis face</strong>, moves through the stack while its sugar chains are rebuilt, and leaves the <strong>trans face</strong> sorted by destination. Lysosome-bound enzymes get a mannose-6-phosphate tag that acts as the address.",
+    doing:"Receiving ER vesicles at cis · budding tagged vesicles from trans",
+    data:[["Cisternae","4–8"],["Tag","Mannose-6-phosphate"],["Found","Camillo Golgi 1898"]] },
+
+  { key:"mito", name:"Mitochondrion", sub:"Oxidative phosphorylation", varname:"--mito",
+    text:"Strips electrons from food and runs them down the folded inner membrane, pumping protons out. The protons return only through <strong>ATP synthase</strong>, a turbine that spins as they pass — about 30 ATP per glucose. It keeps its own circular DNA.",
+    doing:"Pumping protons across the cristae · releasing ATP into the cytosol",
+    data:[["Length","1–4 µm"],["Per liver cell","1,000–2,000"],["Yield","≈30 ATP / glucose"]] },
+
+  { key:"lyso", name:"Lysosome", sub:"Acidic digestive compartment", varname:"--lysosome",
+    text:"Holds ~60 enzymes that only work in acid, with proton pumps keeping the inside at <strong>pH 4.5</strong>. Worn-out organelles and swallowed bacteria are delivered here and dismantled. If one ruptures, neutral cytosol switches the enzymes off.",
+    doing:"Fusing with delivered cargo · digesting it back into building blocks",
+    data:[["Diameter","0.1–1.2 µm"],["Interior","pH 4.5–5.0"],["Enzymes","≈60 hydrolases"]] }
+];
+
+/* ══════════════════════════════════════════════════════════════
+   RENDERER
+   ══════════════════════════════════════════════════════════════ */
+var canvas = document.getElementById("cv"), app = document.getElementById("app");
+var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+var renderer = new THREE.WebGLRenderer({canvas:canvas, antialias:true, powerPreference:"high-performance"});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.NoToneMapping;
+renderer.toneMappingExposure = 1.0;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+var scene = new THREE.Scene();
+var camera = new THREE.PerspectiveCamera(40, 1.6, 0.1, 400);
+
+function buildEnvironment(dark){
+  var c = document.createElement("canvas"); c.width = 512; c.height = 256;
+  var g = c.getContext("2d");
+  var grad = g.createLinearGradient(0,0,0,256);
+  if(dark){
+    grad.addColorStop(0,"#525d78"); grad.addColorStop(.42,"#242c3d");
+    grad.addColorStop(.52,"#131820"); grad.addColorStop(1,"#05070b");
+  }else{
+    grad.addColorStop(0,"#ffffff"); grad.addColorStop(.44,"#eaeff5");
+    grad.addColorStop(.54,"#c6cfda"); grad.addColorStop(1,"#909aa8");
+  }
+  g.fillStyle = grad; g.fillRect(0,0,512,256);
+  function lamp(x,y,r,a){
+    var rg = g.createRadialGradient(x,y,0,x,y,r);
+    rg.addColorStop(0,"rgba(255,255,255,"+a+")"); rg.addColorStop(1,"rgba(255,255,255,0)");
+    g.fillStyle = rg; g.beginPath(); g.arc(x,y,r,0,Math.PI*2); g.fill();
+  }
+  lamp(150,50,135, dark?0.55:0.95); lamp(392,94,105, dark?0.22:0.45);
+  var tex = new THREE.CanvasTexture(c);
+  tex.mapping = THREE.EquirectangularReflectionMapping;
+  var p = new THREE.PMREMGenerator(renderer); p.compileEquirectangularShader();
+  var env = p.fromEquirectangular(tex).texture;
+  p.dispose(); tex.dispose();
+  return env;
+}
+
+var key = new THREE.DirectionalLight(0xffffff, 1.4);
+key.position.set(16,22,14); key.castShadow = true;
+key.shadow.mapSize.set(1536,1536); key.shadow.radius = 5; key.shadow.bias = -0.0011;
+key.shadow.camera.near = 6; key.shadow.camera.far = 74;
+key.shadow.camera.left = -13.5; key.shadow.camera.right = 13.5;
+key.shadow.camera.top = 13.5; key.shadow.camera.bottom = -13.5;
+scene.add(key);
+var rim = new THREE.DirectionalLight(0xbdd3f2, 0.42); rim.position.set(-18,-6,-14); scene.add(rim);
+var amb = new THREE.AmbientLight(0xffffff, 0.2); scene.add(amb);
+var hemi = new THREE.HemisphereLight(0xdfe9f7, 0x5a4a52, 0.34); scene.add(hemi);
+
+/* ══════════════════════════════════════════════════════════════
+   HELPERS
+   ══════════════════════════════════════════════════════════════ */
+function noise3(x,y,z){ return Math.sin(x*1.7+y*.9)*Math.sin(y*1.3+z*1.1)*Math.sin(z*1.6+x*.7); }
+function blob(radius, detail, amp, seed){
+  var g = new THREE.IcosahedronGeometry(radius, detail);
+  var p = g.attributes.position, v = new THREE.Vector3(), i, s;
+  for(i=0;i<p.count;i++){
+    v.fromBufferAttribute(p,i);
+    s = 1 + amp*noise3(v.x*.42+seed, v.y*.42+seed, v.z*.42+seed);
+    v.multiplyScalar(s); p.setXYZ(i,v.x,v.y,v.z);
+  }
+  g.computeVertexNormals(); return g;
+}
+function sheet(fn,uSeg,vSeg){
+  var pos=[],uv=[],idx=[],i,j,u,v,p,a,b,c,d;
+  for(i=0;i<=uSeg;i++) for(j=0;j<=vSeg;j++){
+    u=i/uSeg; v=j/vSeg; p=fn(u,v); pos.push(p.x,p.y,p.z); uv.push(u,v);
+  }
+  for(i=0;i<uSeg;i++) for(j=0;j<vSeg;j++){
+    a=i*(vSeg+1)+j; b=a+1; c=a+(vSeg+1); d=c+1; idx.push(a,c,b,b,c,d);
+  }
+  var g=new THREE.BufferGeometry();
+  g.setAttribute("position",new THREE.Float32BufferAttribute(pos,3));
+  g.setAttribute("uv",new THREE.Float32BufferAttribute(uv,2));
+  g.setIndex(idx); g.computeVertexNormals(); return g;
+}
+/* a flattened, curved sac — the real shape of an ER / Golgi cisterna */
+function cisterna(opts){
+  var g = new THREE.SphereGeometry(1, 84, 42);
+  var p = g.attributes.position, v = new THREE.Vector3(), i, th, r, h;
+  for(i=0;i<p.count;i++){
+    v.fromBufferAttribute(p,i);
+    th = opts.theta0 + v.x*opts.arc*0.5;
+    r  = opts.radius + v.y*opts.thick + 0.05*Math.sin(v.z*7 + opts.seed);
+    h  = v.z*opts.height + 0.09*Math.sin(v.x*5 + opts.seed) + (opts.bowl||0)*(v.x*v.x + v.z*v.z);
+    p.setXYZ(i,
+      opts.center.x + Math.cos(th)*r,
+      opts.center.y + h + (opts.lift||0),
+      opts.center.z + Math.sin(th)*r);
+  }
+  g.computeVertexNormals(); return g;
+}
+
+var themed = [];
+function surface(varname, o){
+  o = o||{};
+  var m = new THREE.MeshPhysicalMaterial({
+    color:0xffffff, roughness:o.rough===undefined?0.34:o.rough, metalness:0,
+    clearcoat:o.clearcoat===undefined?0.14:o.clearcoat,
+    clearcoatRoughness:o.ccRough===undefined?0.26:o.ccRough,
+    transparent:o.opacity!==undefined, opacity:o.opacity===undefined?1:o.opacity,
+    side:o.side||THREE.FrontSide, envMapIntensity:o.env===undefined?0.38:o.env,
+    depthWrite:o.depthWrite===undefined?true:o.depthWrite,
+    emissive:new THREE.Color(0x000000)
+  });
+  m.userData = {varname:varname, tint:o.tint===undefined?1:o.tint,
+                sat:o.sat===undefined?1.7:o.sat,
+                baseOpacity:m.opacity, baseTransparent:m.transparent};
+  themed.push(m); return m;
+}
+var _s = 20260904;
+function rnd(){ _s=(_s*1664525+1013904223)%4294967296; return _s/4294967296; }
+function rr(a,b){ return a+rnd()*(b-a); }
+
+var picks = [], groups = {};
+function group(k){ var g=new THREE.Group(); g.userData.key=k; groups[k]=g; scene.add(g); return g; }
+function solid(mesh,k,cast){ mesh.userData.key=k; mesh.castShadow=cast!==false; mesh.receiveShadow=true; picks.push(mesh); return mesh; }
+
+/* ══════════════════════════════════════════════════════════════
+   THE CELL
+   ══════════════════════════════════════════════════════════════ */
+var R_CELL = 10, WALL = 0.28;
+var CUT_A = -0.55, CUT_B = 2.30;
+var NUC = new THREE.Vector3(-2.6, 0.4, -1.0);
+var GOL = new THREE.Vector3(4.3, 2.3, 1.9);
+function cellR(t,p){
+  return R_CELL*(1
+    + 0.090*Math.sin(t*2.0+1.2)*Math.sin(p*1.7+0.6)
+    + 0.055*Math.sin(t*3.3+2.4)*Math.sin(p*2.9+1.9)
+    + 0.028*Math.sin(t*5.1+0.4)*Math.sin(p*4.2+2.7));
+}
+/* flattened closed cisterna wrapped around a centre - the real ER form */
+function cisternaTube(o){
+  return sheet(function(u,v){
+    var a  = v*Math.PI*2;
+    var th = o.theta0 + (u-0.5)*o.arc;
+    var r  = o.radius + (o.fold||0)*Math.sin(u*Math.PI*(o.folds||1)) + o.thick*Math.cos(a);
+    var y  = o.y0 + o.halfH*Math.sin(a) + 0.22*Math.sin(u*Math.PI*(o.folds||1)*0.5);
+    return new THREE.Vector3(o.center.x + Math.cos(th)*r, o.center.y + y, o.center.z + Math.sin(th)*r);
+  }, 210, 22);
+}
+
+/* ── plasma membrane ── */
+var gMem = group("membrane");
+var memMat  = surface("--membrane",{rough:.52, clearcoat:.18, ccRough:.45, side:THREE.DoubleSide, opacity:.96, env:.4, tint:.9, sat:.5});
+var memInMat= surface("--membrane",{rough:.72, clearcoat:.06, ccRough:.6, side:THREE.DoubleSide, env:.22, tint:.52, sat:.26});
+var memRim  = surface("--membrane",{rough:.55, clearcoat:.15, tint:.62, sat:.5, side:THREE.DoubleSide});
+var memGlass= surface("--membrane",{rough:.14, clearcoat:1, ccRough:.07, opacity:.13, side:THREE.DoubleSide, depthWrite:false, env:1.6, sat:.6});
+var memCut = new THREE.Group(), memWhole = new THREE.Group();
+gMem.add(memCut); gMem.add(memWhole);
+(function(){
+  var span = Math.PI*2 - (CUT_B-CUT_A);
+  function shell(off){
+    return sheet(function(u,v){
+      var th = CUT_B + u*span, ph = 0.001 + v*(Math.PI-0.002), r = cellR(th,ph)+off;
+      return new THREE.Vector3(r*Math.sin(ph)*Math.cos(th), r*Math.cos(ph), r*Math.sin(ph)*Math.sin(th));
+    },170,86);
+  }
+  memCut.add(solid(new THREE.Mesh(shell(0),memMat),"membrane",false));
+  memCut.add(solid(new THREE.Mesh(shell(-WALL),memInMat),"membrane",false));
+  function face(theta){
+    return sheet(function(u,v){
+      var ph = 0.001+u*(Math.PI-0.002), r = cellR(theta,ph)-v*WALL;
+      return new THREE.Vector3(r*Math.sin(ph)*Math.cos(theta), r*Math.cos(ph), r*Math.sin(ph)*Math.sin(theta));
+    },86,3);
+  }
+  memCut.add(solid(new THREE.Mesh(face(CUT_A),memRim),"membrane",false));
+  memCut.add(solid(new THREE.Mesh(face(CUT_B),memRim),"membrane",false));
+  memCut.traverse(function(m){ if(m.isMesh) m.receiveShadow = false; });
+  var whole = new THREE.Mesh(blob(R_CELL,5,0.03,3.1), memGlass);
+  whole.renderOrder = 8;
+  memWhole.add(solid(whole,"membrane",false));
+  memWhole.visible = false;
+})();
+
+/* ── nucleus ── */
+var gNuc = group("nucleus"); gNuc.position.copy(NUC);
+var nucMat = surface("--nucleus",{rough:.42, clearcoat:.3, ccRough:.3, env:.85, tint:.95});
+var envMat = surface("--nucleus",{rough:.13, clearcoat:1, ccRough:.09, opacity:.24, side:THREE.DoubleSide, depthWrite:false, env:1.5});
+var poreMat = surface("--nucleus",{rough:.28, clearcoat:.8, tint:1.3});
+var nucleoMat = surface("--nucleus",{rough:.6, clearcoat:.2, tint:.5});
+gNuc.add(solid(new THREE.Mesh(blob(3.0,5,.03,7.7),nucMat),"nucleus"));
+gNuc.add(solid(new THREE.Mesh(blob(3.28,5,.03,7.7),envMat),"nucleus",false));
+var nucleolus = new THREE.Mesh(blob(1.0,4,.1,2.4), nucleoMat);
+nucleolus.position.set(.9,.5,.6); gNuc.add(solid(nucleolus,"nucleus"));
+var PORES = [];
+(function(){
+  var geo = new THREE.TorusGeometry(.2,.062,8,18);
+  var im = new THREE.InstancedMesh(geo, poreMat, 58); im.castShadow = true;
+  var d = new THREE.Object3D(), i, a, b, dir;
+  for(i=0;i<58;i++){
+    b = Math.acos(1-2*(i+.5)/58); a = Math.PI*(1+Math.sqrt(5))*i;
+    dir = new THREE.Vector3(Math.sin(b)*Math.cos(a), Math.cos(b), Math.sin(b)*Math.sin(a));
+    d.position.copy(dir).multiplyScalar(3.27);
+    d.lookAt(dir.clone().multiplyScalar(8)); d.updateMatrix(); im.setMatrixAt(i,d.matrix);
+    if(dir.x > -0.1) PORES.push(NUC.clone().add(dir.clone().multiplyScalar(3.35)));
+  }
+  im.userData.key = "nucleus"; picks.push(im); gNuc.add(im);
+})();
+
+/* ── rough ER: stacked cisternae hugging the nucleus ── */
+var gRer = group("rer");
+var rerMat = surface("--rer",{rough:.4, clearcoat:.35, ccRough:.28, env:.9, side:THREE.DoubleSide});
+var rerPts = [], RER_BUD = [];
+(function(){
+  var cfg = [
+    {radius:4.00, theta0:1.78, arc:1.15, height:1.05, lift:-2.70},
+    {radius:4.34, theta0:1.60, arc:1.20, height:1.10, lift:-1.35},
+    {radius:4.68, theta0:1.84, arc:1.18, height:1.05, lift: 0.05},
+    {radius:5.02, theta0:1.64, arc:1.15, height:1.00, lift: 1.45},
+    {radius:5.30, theta0:1.88, arc:1.10, height:0.95, lift: 2.80},
+    {radius:4.15, theta0:2.68, arc:1.05, height:0.95, lift: 1.10},
+    {radius:4.50, theta0:2.78, arc:1.00, height:0.90, lift:-0.60},
+    {radius:5.55, theta0:2.35, arc:1.05, height:0.90, lift: 0.55}
+  ];
+  var L, geo, pos, nor, i, v = new THREE.Vector3(), n = new THREE.Vector3();
+  for(L=0;L<cfg.length;L++){
+    geo = cisterna({center:NUC, radius:cfg[L].radius, theta0:cfg[L].theta0, arc:cfg[L].arc,
+                    height:cfg[L].height, thick:0.075, lift:cfg[L].lift, seed:L*2.1});
+    gRer.add(solid(new THREE.Mesh(geo, rerMat),"rer"));
+    pos = geo.attributes.position; nor = geo.attributes.normal;
+    for(i=0;i<pos.count;i+=33){
+      v.fromBufferAttribute(pos,i); n.fromBufferAttribute(nor,i);
+      if(n.dot(v.clone().sub(NUC).normalize()) < 0.1) continue;
+      rerPts.push(v.clone().add(n.multiplyScalar(0.12)));
+    }
+    RER_BUD.push(new THREE.Vector3(
+      NUC.x + Math.cos(cfg[L].theta0)*cfg[L].radius,
+      NUC.y + cfg[L].lift,
+      NUC.z + Math.sin(cfg[L].theta0)*cfg[L].radius));
+  }
+})();
+
+/* ── ribosomes ── */
+var gRibo = group("ribosome");
+var riboMat = surface("--ribosome",{rough:.28, clearcoat:.8, ccRough:.15});
+var freeRibo = [];
+(function(){
+  var i,r,a,b,p;
+  for(i=0;i<220;i++){
+    r = rr(3.9,9.0); b = Math.acos(1-2*rnd()); a = rnd()*Math.PI*2;
+    p = new THREE.Vector3(Math.sin(b)*Math.cos(a),Math.cos(b),Math.sin(b)*Math.sin(a)).multiplyScalar(r);
+    if(p.distanceTo(NUC) < 3.8) continue;
+    freeRibo.push(p);
+  }
+  var all = rerPts.concat(freeRibo);
+  var im = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(.062,2), riboMat, all.length);
+  im.castShadow = true; im.receiveShadow = true;
+  var d = new THREE.Object3D();
+  for(i=0;i<all.length;i++){
+    d.position.copy(all[i]); d.scale.setScalar(rr(.8,1.35)); d.updateMatrix(); im.setMatrixAt(i,d.matrix);
+  }
+  im.instanceMatrix.needsUpdate = true;
+  im.userData.key = "ribosome"; picks.push(im); gRibo.add(im);
+})();
+
+/* ── smooth ER ── */
+var gSer = group("ser");
+var serMat = surface("--ser",{rough:.34, clearcoat:.45, ccRough:.22, env:.9});
+var SER_PTS = [];
+(function(){
+  var seeds = [
+    [new THREE.Vector3(1.6,-3.0,2.8), new THREE.Vector3(3.8,-3.6,4.4), new THREE.Vector3(6.0,-2.1,3.2), new THREE.Vector3(6.8,.4,4.7), new THREE.Vector3(5.3,2.4,5.7)],
+    [new THREE.Vector3(3.8,-3.6,4.4), new THREE.Vector3(5.4,-5.2,2.1), new THREE.Vector3(7.3,-4.2,-.3), new THREE.Vector3(7.7,-1.7,-1.8)],
+    [new THREE.Vector3(6.0,-2.1,3.2), new THREE.Vector3(8.0,-2.3,1.3), new THREE.Vector3(8.5,.3,.3)],
+    [new THREE.Vector3(1.6,-3.0,2.8), new THREE.Vector3(2.3,-5.3,1.5), new THREE.Vector3(4.5,-6.6,-.5), new THREE.Vector3(6.5,-5.4,-2.5)],
+    [new THREE.Vector3(6.8,.4,4.7), new THREE.Vector3(8.3,1.7,2.5), new THREE.Vector3(8.1,3.5,.5)]
+  ];
+  var i,j,curve,cap;
+  for(i=0;i<seeds.length;i++){
+    curve = new THREE.CatmullRomCurve3(seeds[i]);
+    gSer.add(solid(new THREE.Mesh(new THREE.TubeGeometry(curve,140,.175,16,false), serMat),"ser"));
+    for(j=0;j<seeds[i].length;j+=seeds[i].length-1){
+      cap = new THREE.Mesh(new THREE.SphereGeometry(.175,18,14), serMat);
+      cap.position.copy(seeds[i][j]); gSer.add(solid(cap,"ser"));
+    }
+    for(j=0;j<12;j++) SER_PTS.push(curve.getPointAt(j/11));
+  }
+})();
+
+/* ── golgi ── */
+var gGol = group("golgi"); gGol.position.copy(GOL); gGol.rotation.set(.26,-1.15,.18);
+var golMat = surface("--golgi",{rough:.45, clearcoat:.16, ccRough:.35, env:.4, sat:1.25, tint:.88});
+var vesMat = surface("--golgi",{rough:.22, clearcoat:.85, ccRough:.12, tint:1.15});
+var GOL_CIS = new THREE.Vector3(), GOL_TRANS = new THREE.Vector3();
+(function(){
+  var i, geo, w;
+  for(i=0;i<6;i++){
+    w = 1 - i*0.075;
+    geo = cisterna({center:new THREE.Vector3(0,0,0), radius:0.0, theta0:0, arc:0,
+                    height:1.05*w, thick:0.14, seed:i*1.7, lift:0});
+    /* rebuild as a flat bent stack rather than a wrapped one */
+    (function(g, layer, ww){
+      var p = g.attributes.position, v = new THREE.Vector3(), k;
+      var sph = new THREE.SphereGeometry(1,84,42).attributes.position;
+      for(k=0;k<p.count;k++){
+        v.fromBufferAttribute(sph,k);
+        p.setXYZ(k,
+          v.x*2.05*ww,
+          layer*0.46 - 1.15 + v.y*0.13 + 0.26*(v.x*v.x*0.55 + v.z*v.z*0.9),
+          v.z*1.15*ww);
+      }
+      g.computeVertexNormals();
+    })(geo, i, w);
+    gGol.add(solid(new THREE.Mesh(geo, golMat),"golgi"));
+  }
+  GOL_CIS.copy(GOL).add(new THREE.Vector3(-0.2,-1.5,0.5));
+  GOL_TRANS.copy(GOL).add(new THREE.Vector3(0.4,1.5,-0.2));
+})();
+
+/* ── mitochondria ── */
+var gMito = group("mito");
+var mitoOut = surface("--mito",{rough:.34, clearcoat:.45, ccRough:.22, opacity:.68, side:THREE.DoubleSide, depthWrite:false, env:.9});
+var mitoIn  = surface("--mito",{rough:.42, clearcoat:.35, tint:.8, side:THREE.DoubleSide});
+var MITO = [];
+(function(){
+  var pts=[],i,t,r;
+  for(i=0;i<=40;i++){ t=i/40; r=.62*Math.pow(Math.sin(Math.PI*t),.42); pts.push(new THREE.Vector2(Math.max(r,1e-4),(t-.5)*2.4)); }
+  var bodyGeo = new THREE.LatheGeometry(pts,40);
+  var crGeo = sheet(function(u,v){
+    var y=(u-.5)*2.0, fold=.30*Math.sin(u*Math.PI*9),
+        w=.44*Math.sin(Math.PI*Math.min(Math.max(u,.02),.98));
+    return new THREE.Vector3((v-.5)*2*w, y, fold);
+  },150,10);
+  var slots = [
+    [ 6.5, 3.2, 2.3,  .7,.4,1.1], [-5.7, 3.5, 3.5, -.5,1.1,.4],
+    [ 4.5,-4.7,-3.2, 1.2,-.6,.2], [-6.7,-2.5,-1.5,  .3,.9,-.8],
+    [ 1.0, 6.0,-3.5, 1.0,.2,.5],  [-2.7,-5.9, 4.0, -.9,.5,.9],
+    [ 7.1, 0.2,-4.2,  .2,-1.2,.6],[ 2.6,-2.2, 6.4,  .9,.3,-.4],
+    [-4.2, 5.6, 0.6, -.3,.8,1.2], [ 3.9, 6.1, 1.4,  .5,-.4,.9],
+    [-7.4, 0.4, 2.6,  .8,.2,-.5], [ 1.4,-7.0,-1.8, -.6,1.0,.3],
+    [ 5.6,-3.4, 4.4,  .3,.7,1.4], [-3.0, 2.2, 6.6, 1.1,-.3,.2]
+  ];
+  for(i=0;i<slots.length;i++){
+    var s = slots[i], h = new THREE.Group();
+    h.position.set(s[0],s[1],s[2]); h.rotation.set(s[3],s[4],s[5]);
+    h.scale.setScalar(rr(.82,1.22));
+    h.add(solid(new THREE.Mesh(bodyGeo,mitoOut),"mito",false));
+    var c1 = new THREE.Mesh(crGeo, mitoIn), c2 = new THREE.Mesh(crGeo, mitoIn);
+    c2.rotation.y = Math.PI/2;
+    h.add(solid(c1,"mito")); h.add(solid(c2,"mito"));
+    gMito.add(h);
+    MITO.push({node:h, home:h.position.clone(), phase:rnd()*6.28});
+  }
+})();
+
+/* ── lysosomes ── */
+var gLyso = group("lyso");
+var lysoMat = surface("--lysosome",{rough:.36, clearcoat:.4, ccRough:.25, env:.85, tint:.92});
+var lysoIn = surface("--lysosome",{rough:.72, clearcoat:.1, tint:1.35});
+var LYSO = [];
+(function(){
+  var slots=[[5.3,1.5,4.7],[-4.5,-3.7,-4.2],[2.1,-6.3,1.2],[-1.2,4.5,4.9],[6.3,-2.1,-1.0],
+             [-6.9,1.2,-2.2],[0.4,-4.4,-5.4],[7.0,2.4,-2.6],[-2.4,-1.6,7.0],[3.4,4.6,4.2]];
+  var i,j,h,sc,d;
+  for(i=0;i<slots.length;i++){
+    h = new THREE.Group(); h.position.set(slots[i][0],slots[i][1],slots[i][2]);
+    sc = rr(.34,.54);
+    h.add(solid(new THREE.Mesh(blob(sc,4,.09,i*3.3),lysoMat),"lyso"));
+    for(j=0;j<8;j++){
+      d = new THREE.Mesh(new THREE.IcosahedronGeometry(sc*.13,1), lysoIn);
+      d.position.set(rr(-sc*.45,sc*.45),rr(-sc*.45,sc*.45),rr(-sc*.45,sc*.45));
+      h.add(d);
+    }
+    gLyso.add(h);
+    LYSO.push({node:h, home:h.position.clone(), phase:rnd()*6.28, flash:0});
+  }
+})();
+
+/* ── crowding: transport vesicles, peroxisomes, lipid droplets ──
+      Real cytoplasm is packed. These are unlabelled scene detail. */
+var vesMat2 = surface("--rer",{rough:.38, clearcoat:.18, env:.28, tint:1.02, sat:1.15});
+var peroxMat = surface("--ser",{rough:.42, clearcoat:.2, env:.3, tint:.78, sat:1.3});
+var lipidMat = surface("--ribosome",{rough:.28, clearcoat:.35, env:.4, tint:1.05, sat:.85});
+(function(){
+  function scatter(mat, count, rMin, rMax, sMin, sMax, detail){
+    var geo = new THREE.IcosahedronGeometry(1, detail);
+    var im = new THREE.InstancedMesh(geo, mat, count);
+    im.castShadow = true; im.receiveShadow = true;
+    var d = new THREE.Object3D(), i, made = 0, guard = 0, p, rad, a, b;
+    while(made < count && guard++ < count*14){
+      rad = rr(rMin, rMax); b = Math.acos(1-2*rnd()); a = rnd()*Math.PI*2;
+      p = new THREE.Vector3(Math.sin(b)*Math.cos(a), Math.cos(b), Math.sin(b)*Math.sin(a)).multiplyScalar(rad);
+      if(p.distanceTo(NUC) < 3.7) continue;
+      d.position.copy(p);
+      d.scale.setScalar(rr(sMin, sMax));
+      d.rotation.set(rnd()*6.28, rnd()*6.28, rnd()*6.28);
+      d.updateMatrix(); im.setMatrixAt(made++, d.matrix);
+    }
+    im.count = made; im.instanceMatrix.needsUpdate = true;
+    scene.add(im);
+  }
+  scatter(vesMat2,  38, 4.0, 9.0, 0.10, 0.20, 2);  /* transport vesicles */
+  scatter(peroxMat, 14, 4.2, 8.6, 0.15, 0.25, 2);  /* peroxisomes */
+  scatter(lipidMat,  9, 4.4, 8.4, 0.20, 0.34, 3);  /* lipid droplets */
+})();
+
+/* ── centrosome + cytoskeleton (scene detail) ── */
+var detailMat = surface("--nucleus",{rough:.4, clearcoat:.5, tint:1.4});
+(function(){
+  var c = new THREE.Group(); c.position.set(-1.2,-2.0,-4.6);
+  var g = new THREE.CylinderGeometry(.22,.22,.62,9,1,true);
+  var a = new THREE.Mesh(g, detailMat), b = new THREE.Mesh(g, detailMat);
+  a.castShadow = b.castShadow = true;
+  b.rotation.z = Math.PI/2; b.position.set(.5,.4,0);
+  c.add(a); c.add(b); scene.add(c);
+})();
+var cytoMat = new THREE.LineBasicMaterial({color:0x8492a8, transparent:true, opacity:.16});
+(function(){
+  var pts=[],i,a1,b1,a2,b2,p1,p2;
+  for(i=0;i<330;i++){
+    b1=Math.acos(1-2*rnd()); a1=rnd()*6.283; b2=Math.acos(1-2*rnd()); a2=rnd()*6.283;
+    p1=new THREE.Vector3(Math.sin(b1)*Math.cos(a1),Math.cos(b1),Math.sin(b1)*Math.sin(a1)).multiplyScalar(rr(4,9.2));
+    p2=new THREE.Vector3(Math.sin(b2)*Math.cos(a2),Math.cos(b2),Math.sin(b2)*Math.sin(a2)).multiplyScalar(rr(4,9.2));
+    if(p1.distanceTo(p2)>8) continue;
+    pts.push(p1.x,p1.y,p1.z,p2.x,p2.y,p2.z);
+  }
+  var g=new THREE.BufferGeometry();
+  g.setAttribute("position",new THREE.Float32BufferAttribute(pts,3));
+  scene.add(new THREE.LineSegments(g,cytoMat));
+})();
+
+/* ══════════════════════════════════════════════════════════════
+   LIVING SYSTEMS — the cell at work
+   ══════════════════════════════════════════════════════════════ */
+var particleMats = {
+  atp:  new THREE.MeshBasicMaterial({color:0x63C264, transparent:true, opacity:.95}),
+  ca:   new THREE.MeshBasicMaterial({color:0x55C6B6, transparent:true, opacity:.95}),
+  ion:  new THREE.MeshBasicMaterial({color:0xE2607F, transparent:true, opacity:.9}),
+  mrna: new THREE.MeshBasicMaterial({color:0x9575E8, transparent:true, opacity:.95}),
+  pept: new THREE.MeshBasicMaterial({color:0xF5C654, transparent:true, opacity:.95})
+};
+var vesicleMats = {
+  er:    surface("--rer",{rough:.2, clearcoat:.9, ccRough:.1, tint:1.2}),
+  golgi: surface("--golgi",{rough:.2, clearcoat:.9, ccRough:.1, tint:1.2}),
+  lyso:  surface("--lysosome",{rough:.2, clearcoat:.9, ccRough:.1, tint:1.2})
+};
+
+/* particle pool */
+var dotGeo = new THREE.SphereGeometry(0.075, 10, 8);
+var particles = [];
+(function(){
+  var i, m;
+  for(i=0;i<190;i++){
+    m = new THREE.Mesh(dotGeo, particleMats.atp);
+    m.visible = false; scene.add(m);
+    particles.push({mesh:m, life:0, ttl:1, vel:new THREE.Vector3(), spin:0});
+  }
+})();
+function emit(pos, kind, speedVec, ttl, size){
+  var i, p;
+  for(i=0;i<particles.length;i++){
+    p = particles[i];
+    if(p.life > 0) continue;
+    p.mesh.material = particleMats[kind];
+    p.mesh.position.copy(pos);
+    p.mesh.scale.setScalar(size||1);
+    p.mesh.visible = true;
+    p.vel.copy(speedVec);
+    p.ttl = ttl; p.life = ttl;
+    return p;
+  }
+  return null;
+}
+
+/* vesicle pool */
+var vesGeo = new THREE.SphereGeometry(0.2, 20, 14);
+var vesicles = [];
+(function(){
+  var i, m;
+  for(i=0;i<16;i++){
+    m = new THREE.Mesh(vesGeo, vesicleMats.er);
+    m.castShadow = true; m.visible = false; scene.add(m);
+    vesicles.push({mesh:m, active:false, t:0, dur:1, curve:null, route:"", tracked:false});
+  }
+})();
+function launch(curve, dur, matKey, route, tracked){
+  var i, v;
+  for(i=0;i<vesicles.length;i++){
+    v = vesicles[i];
+    if(v.active) continue;
+    v.curve = curve; v.dur = dur; v.t = 0; v.active = true; v.route = route;
+    v.tracked = !!tracked;
+    v.mesh.material = vesicleMats[matKey];
+    v.mesh.scale.setScalar(tracked ? 1.35 : 1);
+    v.mesh.visible = true;
+    return v;
+  }
+  return null;
+}
+function wobble(a, b, amp){
+  var mid = a.clone().lerp(b, .5);
+  mid.x += (rnd()-.5)*amp; mid.y += (rnd()-.5)*amp; mid.z += (rnd()-.5)*amp;
+  return new THREE.CatmullRomCurve3([a.clone(), mid, b.clone()]);
+}
+function surfacePoint(dir){
+  var d = dir.clone().normalize();
+  var ph = Math.acos(Math.max(-1,Math.min(1,d.y))), th = Math.atan2(d.z,d.x);
+  return d.multiplyScalar(cellR(th,ph) - WALL*0.6);
+}
+
+/* fusion flash rings */
+var rings = [];
+(function(){
+  var i, m, g = new THREE.RingGeometry(0.12, 0.2, 28);
+  for(i=0;i<8;i++){
+    m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:0, side:THREE.DoubleSide}));
+    m.visible = false; scene.add(m);
+    rings.push({mesh:m, life:0});
+  }
+})();
+function flash(pos, color){
+  var i, r;
+  for(i=0;i<rings.length;i++){
+    r = rings[i];
+    if(r.life > 0) continue;
+    r.mesh.position.copy(pos);
+    r.mesh.lookAt(camera.position);
+    r.mesh.material.color.set(color);
+    r.mesh.material.opacity = .9;
+    r.mesh.scale.setScalar(.6);
+    r.mesh.visible = true; r.life = 1;
+    return;
+  }
+}
+
+/* translating ribosomes: a bead crawling an mRNA strand with a growing chain */
+var TRANSLATORS = [];
+(function(){
+  var i, j, host, strand, curveP, ribo, chain;
+  for(i=0;i<6;i++){
+    host = rerPts.length ? rerPts[Math.floor(rnd()*rerPts.length)] : new THREE.Vector3(2,2,4);
+    var dir = host.clone().normalize();
+    var perp = new THREE.Vector3(-dir.z, .3, dir.x).normalize();
+    curveP = new THREE.CatmullRomCurve3([
+      host.clone().add(perp.clone().multiplyScalar(-0.9)),
+      host.clone().add(perp.clone().multiplyScalar(-0.2)).add(new THREE.Vector3(0,.18,0)),
+      host.clone().add(perp.clone().multiplyScalar(0.5)),
+      host.clone().add(perp.clone().multiplyScalar(1.1)).add(new THREE.Vector3(0,-.12,0))
+    ]);
+    strand = new THREE.Mesh(new THREE.TubeGeometry(curveP, 40, .035, 6, false), particleMats.mrna);
+    scene.add(strand);
+    ribo = new THREE.Mesh(new THREE.IcosahedronGeometry(.135,2), riboMat);
+    ribo.castShadow = true; scene.add(ribo);
+    chain = [];
+    for(j=0;j<7;j++){
+      var c = new THREE.Mesh(new THREE.SphereGeometry(.055,8,6), particleMats.pept);
+      c.visible = false; scene.add(c); chain.push(c);
+    }
+    TRANSLATORS.push({curve:curveP, ribo:ribo, chain:chain, t:rnd(), speed:rr(.05,.09), strand:strand});
+  }
+})();
+
+/* membrane ion channels */
+var CHANNELS = [];
+(function(){
+  var i, dir, p;
+  for(i=0;i<14;i++){
+    var b = Math.acos(1-2*rnd()), a = rnd()*6.283;
+    dir = new THREE.Vector3(Math.sin(b)*Math.cos(a), Math.cos(b), Math.sin(b)*Math.sin(a));
+    p = surfacePoint(dir);
+    CHANNELS.push({pos:p, dir:dir, next:rnd()*3});
+  }
+})();
+
+/* timers */
+var timers = {er:1.5, golgi:3.0, lyso:5.0, ca:0.8, atp:0.35, mrna:2.4};
+var counters = {vesicles:0, atp:0, exo:0};
+
+/* ══════════════════════════════════════════════════════════════
+   THEME
+   ══════════════════════════════════════════════════════════════ */
+var rootEl = document.documentElement, envL = null, envD = null, _c = new THREE.Color(), _hsl = {h:0,s:0,l:0};
+function isDark(){
+  var a = rootEl.getAttribute("data-theme");
+  if(a === "dark") return true; if(a === "light") return false;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches;
+}
+function applyTheme(){
+  var dark = isDark(), cs = getComputedStyle(rootEl), i, m;
+  if(dark){ if(!envD) envD = buildEnvironment(true); scene.environment = envD; }
+  else { if(!envL) envL = buildEnvironment(false); scene.environment = envL; }
+  _c.set(cs.getPropertyValue("--scope").trim() || "#F2F5F8");
+  renderer.setClearColor(_c, 1);
+  for(i=0;i<themed.length;i++){
+    m = themed[i];
+    _c.set(cs.getPropertyValue(m.userData.varname).trim() || "#888");
+    _c.getHSL(_hsl);
+    _c.setHSL(_hsl.h,
+              Math.max(0, Math.min(1, _hsl.s*m.userData.sat)),
+              Math.max(.04, Math.min(.94, _hsl.l*m.userData.tint)));
+    m.color.copy(_c); m.needsUpdate = true;
+  }
+  particleMats.atp.color.set(cs.getPropertyValue("--mito").trim());
+  particleMats.ca.color.set(cs.getPropertyValue("--ser").trim());
+  particleMats.ion.color.set(cs.getPropertyValue("--membrane").trim());
+  particleMats.mrna.color.set(cs.getPropertyValue("--nucleus").trim());
+  particleMats.pept.color.set(cs.getPropertyValue("--ribosome").trim());
+  key.intensity = dark ? 1.15 : 1.30;
+  rim.intensity = dark ? .45 : .34;
+  amb.intensity = dark ? .26 : .30;
+  cytoMat.color.set(dark ? 0x7f93b5 : 0x98a4b4);
+  cytoMat.opacity = dark ? .14 : .2;
+}
+applyTheme();
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", applyTheme);
+new MutationObserver(applyTheme).observe(rootEl,{attributes:true, attributeFilter:["data-theme"]});
+
+/* ══════════════════════════════════════════════════════════════
+   CAMERA
+   ══════════════════════════════════════════════════════════════ */
+var HOME = {theta:.86, phi:1.20, radius:29};
+var cam  = {theta:.86, phi:1.20, radius:41, target:new THREE.Vector3(0,0,0)};
+var goal = {theta:.86, phi:1.20, radius:29, target:new THREE.Vector3(0,0,0)};
+var spinning = !reduce;
+function applyCamera(){
+  cam.phi = Math.max(.16, Math.min(Math.PI-.16, cam.phi));
+  cam.radius = Math.max(2.6, Math.min(56, cam.radius));
+  camera.position.set(
+    cam.target.x + cam.radius*Math.sin(cam.phi)*Math.cos(cam.theta),
+    cam.target.y + cam.radius*Math.cos(cam.phi),
+    cam.target.z + cam.radius*Math.sin(cam.phi)*Math.sin(cam.theta));
+  camera.lookAt(cam.target);
+}
+var drag = null;
+canvas.addEventListener("pointerdown", function(e){ drag={x:e.clientX,y:e.clientY,moved:0}; canvas.setPointerCapture(e.pointerId); });
+canvas.addEventListener("pointermove", function(e){
+  if(!drag){ hoverAt(e); return; }
+  var dx=e.clientX-drag.x, dy=e.clientY-drag.y;
+  drag.moved += Math.abs(dx)+Math.abs(dy);
+  goal.theta-=dx*.006; goal.phi-=dy*.006; cam.theta-=dx*.006; cam.phi-=dy*.006;
+  goal.phi = Math.max(.16,Math.min(Math.PI-.16,goal.phi));
+  drag.x=e.clientX; drag.y=e.clientY; spinning=false;
+});
+canvas.addEventListener("pointerup", function(e){ if(drag && drag.moved<6) clickAt(e); drag=null; });
+canvas.addEventListener("pointercancel", function(){ drag=null; });
+canvas.addEventListener("wheel", function(e){
+  e.preventDefault();
+  goal.radius = Math.max(2.6, Math.min(56, goal.radius*(1+Math.sign(e.deltaY)*.09)));
+},{passive:false});
+
+/* ══════════════════════════════════════════════════════════════
+   PICKING + ANNOTATIONS
+   ══════════════════════════════════════════════════════════════ */
+var ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+var selected = null, hovered = null, showLabels = true;
+
+function hitKey(e){
+  var r = canvas.getBoundingClientRect();
+  ndc.x = ((e.clientX-r.left)/r.width)*2-1;
+  ndc.y = -((e.clientY-r.top)/r.height)*2+1;
+  ray.setFromCamera(ndc, camera);
+  var hits = ray.intersectObjects(picks,false), i;
+  for(i=0;i<hits.length;i++){
+    if(hits[i].object.userData.key === "membrane" && hits.length > i+1) continue;
+    return hits[i].object.userData.key;
+  }
+  return null;
+}
+function hoverAt(e){
+  var k = hitKey(e);
+  if(k !== hovered){ hovered = k; canvas.style.cursor = k ? "pointer" : "grab"; }
+}
+function clickAt(e){ var k = hitKey(e); if(k) select(k); else deselect(); }
+
+var ANCHOR = {
+  membrane: new THREE.Vector3(-4.2,-6.6,4.0),
+  nucleus:  NUC.clone(),
+  ribosome: new THREE.Vector3(1.4,0.8,4.4),
+  rer:      NUC.clone().add(new THREE.Vector3(4.4,0.6,2.6)),
+  ser:      new THREE.Vector3(5.6,-3.0,2.0),
+  golgi:    GOL.clone(),
+  mito:     new THREE.Vector3(6.5,3.2,2.3),
+  lyso:     new THREE.Vector3(5.3,1.5,4.7)
+};
+var FOCUSR = {membrane:29, nucleus:12, ribosome:7.5, rer:12, ser:12, golgi:9.5, mito:6.5, lyso:5};
+
+function orgByKey(k){ for(var i=0;i<ORG.length;i++) if(ORG[i].key===k) return ORG[i]; return null; }
+
+/* build annotation DOM */
+var annots = document.getElementById("annots");
+var leads = document.getElementById("leads");
+var tagEls = {}, calloutEl = null;
+(function(){
+  var i, o, t;
+  for(i=0;i<ORG.length;i++){
+    o = ORG[i];
+    t = document.createElement("div");
+    t.className = "tag"; t.style.color = "var("+o.varname+")";
+    t.innerHTML = '<i></i><b>'+o.name+'</b>';
+    annots.appendChild(t); tagEls[o.key] = t;
+  }
+  calloutEl = document.createElement("div");
+  calloutEl.className = "callout";
+  annots.appendChild(calloutEl);
+})();
+
+var rail = document.getElementById("rail");
+(function(){
+  var i, o, b;
+  for(i=0;i<ORG.length;i++){
+    o = ORG[i];
+    b = document.createElement("button");
+    b.className = "keybtn"; b.type = "button";
+    b.setAttribute("data-key", o.key);
+    b.style.setProperty("--c", "var("+o.varname+")");
+    b.innerHTML = '<span class="dot"></span><span>'+o.name+'</span><span class="n">'+String(i+1).padStart(2,"0")+'</span>';
+    rail.appendChild(b);
+  }
+  rail.addEventListener("click", function(e){
+    var t = e.target.closest(".keybtn");
+    if(t) select(t.getAttribute("data-key"));
+  });
+})();
+
+function fillCallout(o){
+  var i, d = "";
+  for(i=0;i<o.data.length;i++) d += '<dt>'+o.data[i][0]+'</dt><dd>'+o.data[i][1]+'</dd>';
+  calloutEl.style.setProperty("--c","var("+o.varname+")");
+  calloutEl.innerHTML =
+    '<div class="num">'+String(ORG.indexOf(o)+1).padStart(2,"0")+' / 08</div>'
+    + '<h2>'+o.name+'</h2><div class="sub">'+o.sub+'</div>'
+    + '<p>'+o.text+'</p>'
+    + '<dl>'+d+'</dl>'
+    + '<div class="doing"><b>Happening now</b>'+o.doing+'</div>';
+}
+function select(k){
+  selected = k;
+  var o = orgByKey(k);
+  goal.target.copy(ANCHOR[k]); goal.radius = FOCUSR[k];
+  spinning = false;
+  fillCallout(o);
+  var btns = rail.querySelectorAll(".keybtn"), i;
+  for(i=0;i<btns.length;i++) btns[i].setAttribute("aria-current", btns[i].getAttribute("data-key")===k ? "true":"false");
+}
+function deselect(){
+  selected = null;
+  calloutEl.classList.remove("on");
+  var btns = rail.querySelectorAll(".keybtn"), i;
+  for(i=0;i<btns.length;i++) btns[i].setAttribute("aria-current","false");
+}
+
+var _p = new THREE.Vector3();
+function project(v, r){
+  _p.copy(v).project(camera);
+  return {x:(_p.x*.5+.5)*r.width, y:(-_p.y*.5+.5)*r.height, behind:_p.z>1};
+}
+function updateAnnotations(){
+  var r = canvas.getBoundingClientRect(), k, el, s, i;
+  var lines = "";
+  /* place tags, then push apart any that would overlap vertically */
+  var placed = [];
+  for(k in tagEls){
+    el = tagEls[k];
+    if(!showLabels || k === selected){ el.classList.remove("on"); continue; }
+    s = project(ANCHOR[k], r);
+    if(s.behind){ el.classList.remove("on"); continue; }
+    placed.push({el:el, ax:s.x, ay:s.y, x:s.x, y:s.y-26, w:el.offsetWidth||120});
+  }
+  placed.sort(function(a,b){ return a.y - b.y; });
+  var MINGAP = 26;
+  for(i=1;i<placed.length;i++){
+    var a = placed[i-1], b = placed[i];
+    if(b.y - a.y < MINGAP && Math.abs(b.x - a.x) < (a.w+b.w)/2){
+      b.y = a.y + MINGAP;
+    }
+  }
+  for(i=0;i<placed.length;i++){
+    var q = placed[i];
+    q.y = Math.max(14, Math.min(r.height-40, q.y));
+    q.x = Math.max(q.w/2 + 10, Math.min(r.width - q.w/2 - 10, q.x));
+    q.el.style.left = q.x+"px"; q.el.style.top = q.y+"px";
+    q.el.classList.add("on");
+    if(Math.abs(q.y - (q.ay-26)) > 6 || Math.abs(q.x - q.ax) > 6){
+      lines += '<path d="M'+q.ax.toFixed(1)+' '+q.ay.toFixed(1)+' L'+q.x.toFixed(1)+' '+(q.y+11).toFixed(1)+'" '
+            +  'stroke="currentColor" stroke-width="1" fill="none" opacity=".3" '
+            +  'style="color:'+getComputedStyle(q.el).color+'"/>';
+    }
+  }
+  if(selected){
+    s = project(ANCHOR[selected], r);
+    if(!s.behind){
+      var w = calloutEl.offsetWidth || 310, h = calloutEl.offsetHeight || 200;
+      var left = s.x < r.width*0.5 ? s.x + 96 : s.x - w - 96;
+      left = Math.max(16, Math.min(r.width - w - 16, left));
+      var top = Math.max(16, Math.min(r.height - h - 16, s.y - h*0.42));
+      calloutEl.style.left = left+"px"; calloutEl.style.top = top+"px";
+      calloutEl.classList.add("on");
+      var ax = left < s.x ? left + w : left;
+      var ay = top + h*0.42;
+      lines += '<path d="M'+s.x.toFixed(1)+' '+s.y.toFixed(1)+' L'+ax.toFixed(1)+' '+ay.toFixed(1)+'" '
+            +  'stroke="var('+orgByKey(selected).varname+')" stroke-width="1" fill="none" opacity=".75"/>'
+            +  '<circle cx="'+s.x.toFixed(1)+'" cy="'+s.y.toFixed(1)+'" r="3.5" fill="none" '
+            +  'stroke="var('+orgByKey(selected).varname+')" stroke-width="1.2"/>';
+    }else{
+      calloutEl.classList.remove("on");
+    }
+  }
+  leads.innerHTML = lines;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CONTROLS
+   ══════════════════════════════════════════════════════════════ */
+var cutaway = true, paused = false, rate = 1.0, follow = false, followVes = null;
+var followHold = 0, followEnd = 0, narrateKey = "";
+var narrateEl = document.getElementById("narrate");
+function narrate(head, body){
+  var k = head + body;
+  if(k === narrateKey) return;
+  narrateKey = k;
+  narrateEl.innerHTML = "<b>"+head+"</b><span>"+body+"</span>";
+  narrateEl.classList.add("on");
+}
+function narrateOff(){ narrateKey = ""; narrateEl.classList.remove("on"); }
+var bCut = document.getElementById("bCut"), bPause = document.getElementById("bPause"),
+    bSpeed = document.getElementById("bSpeed"), bLabels = document.getElementById("bLabels"),
+    bFollow = document.getElementById("bFollow"), bReset = document.getElementById("bReset");
+
+function setCut(on){
+  cutaway = on; memCut.visible = on; memWhole.visible = !on;
+  bCut.setAttribute("aria-pressed", on?"true":"false");
+}
+bCut.addEventListener("click", function(){ setCut(!cutaway); });
+bPause.addEventListener("click", function(){
+  paused = !paused;
+  bPause.setAttribute("aria-pressed", paused?"true":"false");
+  bPause.textContent = paused ? "Resume" : "Pause";
+});
+var RATES = [0.5, 1.0, 2.0];
+bSpeed.addEventListener("click", function(){
+  rate = RATES[(RATES.indexOf(rate)+1) % RATES.length];
+  bSpeed.textContent = "Speed " + rate.toFixed(1) + "×";
+});
+bLabels.addEventListener("click", function(){
+  showLabels = !showLabels;
+  bLabels.setAttribute("aria-pressed", showLabels?"true":"false");
+});
+bFollow.addEventListener("click", function(){
+  follow = !follow;
+  bFollow.setAttribute("aria-pressed", follow?"true":"false");
+  if(follow){
+    deselect();
+    narrate("Waiting", "Watching the rough ER for the next protein to finish folding.");
+  }else{
+    if(followVes){ followVes.tracked = false; followVes.mesh.scale.setScalar(1); }
+    followVes = null; followHold = 0; followEnd = 0;
+    narrateOff();
+    goal.radius = HOME.radius; goal.target.set(0,0,0);
+  }
+});
+bReset.addEventListener("click", function(){
+  deselect(); goal.theta=HOME.theta; goal.phi=HOME.phi; goal.radius=HOME.radius;
+  goal.target.set(0,0,0); setCut(true); spinning = !reduce;
+});
+
+/* ══════════════════════════════════════════════════════════════
+   RESIZE / SCALE BAR / READOUT
+   ══════════════════════════════════════════════════════════════ */
+var sbar = document.getElementById("sbar"), sbarL = document.getElementById("sbarL");
+function resize(){
+  var w = app.clientWidth, h = app.clientHeight;
+  if(!w || !h) return;
+  renderer.setSize(w,h,false); camera.aspect = w/h; camera.updateProjectionMatrix();
+  leads.setAttribute("viewBox","0 0 "+w+" "+h);
+}
+window.addEventListener("resize", resize);
+
+var STEPS = [0.5,1,2,5,10];
+function updateScaleBar(){
+  var h = renderer.domElement.clientHeight;
+  var ppu = (h/2)/(cam.radius*Math.tan(camera.fov*Math.PI/360));
+  var i, chosen = STEPS[0], px;
+  for(i=0;i<STEPS.length;i++){ chosen = STEPS[i]; px = chosen*ppu; if(px>=44 && px<=150) break; }
+  sbar.style.width = Math.max(18, Math.min(190, Math.round(chosen*ppu)))+"px";
+  sbarL.textContent = chosen+" µm";
+}
+var readout = document.getElementById("readout");
+var readoutT = 0;
+
+/* ══════════════════════════════════════════════════════════════
+   SIMULATION
+   ══════════════════════════════════════════════════════════════ */
+var tmpV = new THREE.Vector3(), tmpV2 = new THREE.Vector3();
+
+function simulate(dt, now){
+  var i, j, p, v, m, l, t, c;
+
+  /* --- mitochondria: breathe, glow, emit ATP --- */
+  for(i=0;i<MITO.length;i++){
+    m = MITO[i];
+    t = now*0.0007 + m.phase;
+    m.node.position.set(
+      m.home.x + Math.sin(t*1.1)*0.13,
+      m.home.y + Math.sin(t*0.9+1.7)*0.13,
+      m.home.z + Math.cos(t*1.3)*0.13);
+    m.node.rotation.y += dt*0.00006;
+  }
+  mitoIn.emissive.setRGB(0,0,0);
+  var pulse = 0.5 + 0.5*Math.sin(now*0.0024);
+  mitoIn.emissive.copy(mitoIn.color).multiplyScalar(0.10 + 0.16*pulse);
+
+  timers.atp -= dt/1000;
+  if(timers.atp <= 0){
+    timers.atp = 0.22;
+    m = MITO[Math.floor(rnd()*MITO.length)];
+    tmpV.copy(m.node.position);
+    tmpV2.set(rnd()-.5, rnd()-.5, rnd()-.5).normalize().multiplyScalar(0.9);
+    emit(tmpV, "atp", tmpV2, 2.2, 0.85);
+    counters.atp++;
+  }
+
+  /* --- smooth ER: calcium release --- */
+  timers.ca -= dt/1000;
+  if(timers.ca <= 0){
+    timers.ca = 0.5;
+    tmpV.copy(SER_PTS[Math.floor(rnd()*SER_PTS.length)]);
+    tmpV2.set(rnd()-.5, rnd()-.5, rnd()-.5).normalize().multiplyScalar(1.2);
+    emit(tmpV, "ca", tmpV2, 1.8, 0.7);
+  }
+
+  /* --- nucleus: mRNA export through pores --- */
+  timers.mrna -= dt/1000;
+  if(timers.mrna <= 0 && PORES.length){
+    timers.mrna = 1.9;
+    tmpV.copy(PORES[Math.floor(rnd()*PORES.length)]);
+    tmpV2.copy(tmpV).sub(NUC).normalize().multiplyScalar(1.1);
+    emit(tmpV, "mrna", tmpV2, 2.6, 1.15);
+  }
+
+  /* --- ribosomes translating --- */
+  for(i=0;i<TRANSLATORS.length;i++){
+    t = TRANSLATORS[i];
+    t.t += dt/1000 * t.speed;
+    if(t.t >= 1){
+      t.t = 0;
+      tmpV.copy(t.ribo.position);
+      emit(tmpV, "pept", new THREE.Vector3(rnd()-.5, rnd()*.6, rnd()-.5).normalize().multiplyScalar(.7), 1.6, .9);
+    }
+    t.ribo.position.copy(t.curve.getPointAt(t.t));
+    for(j=0;j<t.chain.length;j++){
+      c = t.chain[j];
+      var frac = (j+1)/t.chain.length;
+      if(frac <= t.t + 0.02){
+        c.visible = true;
+        var back = t.curve.getPointAt(Math.max(0, t.t - 0.001));
+        c.position.copy(t.ribo.position);
+        c.position.y += 0.20 + j*0.11;
+        c.position.x += Math.sin(now*0.002 + j)*0.05;
+        c.position.z += Math.cos(now*0.0018 + j)*0.05;
+      }else c.visible = false;
+    }
+  }
+
+  /* --- membrane ion channels --- */
+  for(i=0;i<CHANNELS.length;i++){
+    c = CHANNELS[i];
+    c.next -= dt/1000;
+    if(c.next <= 0){
+      c.next = rr(1.4, 3.6);
+      var inward = rnd() > 0.45;
+      tmpV.copy(c.pos).multiplyScalar(inward ? 1.06 : 0.94);
+      tmpV2.copy(c.dir).multiplyScalar(inward ? -0.85 : 0.85);
+      emit(tmpV, "ion", tmpV2, 1.7, 0.8);
+    }
+  }
+
+  /* --- vesicle traffic: ER → Golgi → membrane / lysosome --- */
+  timers.er -= dt/1000;
+  if(timers.er <= 0){
+    timers.er = rr(1.1, 2.0);
+    var from = RER_BUD[Math.floor(rnd()*RER_BUD.length)];
+    var tracked = follow && !followVes && followHold <= 0 && followEnd <= 0;
+    v = launch(wobble(from, GOL_CIS, 2.4), rr(3.4,4.6), "er", "er2golgi", tracked);
+    if(v && tracked) followVes = v;
+    counters.vesicles++;
+  }
+  timers.golgi -= dt/1000;
+  if(timers.golgi <= 0){
+    timers.golgi = rr(1.6, 2.6);
+    if(rnd() > 0.4){
+      var dir = new THREE.Vector3(rr(-.3,1), rr(.2,1), rr(-.6,1)).normalize();
+      launch(wobble(GOL_TRANS, surfacePoint(dir), 3.0), rr(4.0,5.4), "golgi", "golgi2mem", false);
+    }else{
+      l = LYSO[Math.floor(rnd()*LYSO.length)];
+      launch(wobble(GOL_TRANS, l.node.position, 2.4), rr(3.2,4.4), "lyso", "golgi2lyso", false);
+    }
+  }
+
+  for(i=0;i<vesicles.length;i++){
+    v = vesicles[i];
+    if(!v.active) continue;
+    v.t += (dt/1000)/v.dur;
+    if(v.t >= 1){
+      v.active = false; v.mesh.visible = false;
+      tmpV.copy(v.curve.getPointAt(1));
+      if(v.route === "golgi2mem"){ flash(tmpV, memMat.color.getHex()); counters.exo++; }
+      else if(v.route === "golgi2lyso"){
+        flash(tmpV, lysoMat.color.getHex());
+        for(j=0;j<LYSO.length;j++) if(LYSO[j].node.position.distanceTo(tmpV) < 1.2) LYSO[j].flash = 1;
+      }else flash(tmpV, golMat.color.getHex());
+      if(v === followVes){
+        followVes = null;
+        if(v.route === "er2golgi"){ followHold = 3.4; }
+        else if(v.route === "golgi2mem"){ followEnd = 3.2; }
+      }
+      continue;
+    }
+    v.mesh.position.copy(v.curve.getPointAt(v.t));
+    v.mesh.scale.setScalar((v.tracked?1.35:1) * (1 + 0.06*Math.sin(now*0.006 + i)));
+  }
+
+  /* --- follow-one-protein narration --- */
+  if(follow){
+    if(followVes && followVes.active){
+      t = followVes.t;
+      if(followVes.route === "er2golgi"){
+        if(t < 0.22) narrate("2 · Budding", "The folded protein is packed into a transport vesicle and pinched off the rough ER.");
+        else if(t < 0.78) narrate("3 · Transport", "The vesicle crosses the cytosol, carried along cytoskeletal tracks toward the Golgi.");
+        else narrate("4 · Arrival", "It fuses with the cis face of the Golgi and empties its cargo into the first cisterna.");
+      }else if(followVes.route === "golgi2mem"){
+        if(t < 0.2) narrate("6 · Shipping", "Sorted and addressed, the protein buds from the trans face in a secretory vesicle.");
+        else if(t < 0.82) narrate("7 · To the surface", "The vesicle travels outward to the plasma membrane.");
+        else narrate("8 · Exocytosis", "The vesicle membrane merges with the cell membrane and the protein is released outside.");
+      }
+    }else if(followHold > 0){
+      followHold -= dt/1000;
+      narrate("5 · Sorting", "Moving cis to trans through the stack: sugar chains are trimmed and rebuilt, and a destination tag is attached.");
+      goal.target.lerp(GOL, 0.06);
+      if(followHold <= 0){
+        var outDir = new THREE.Vector3(rr(.1,1), rr(.3,1), rr(-.3,.9)).normalize();
+        followVes = launch(wobble(GOL_TRANS, surfacePoint(outDir), 2.6), 6.0, "golgi", "golgi2mem", true);
+        counters.vesicles++;
+      }
+    }else if(followEnd > 0){
+      followEnd -= dt/1000;
+      narrate("Delivered", "One protein, four compartments: nucleus → ribosome → rough ER → Golgi → outside the cell. Watching for the next one.");
+    }else{
+      narrate("1 · Waiting", "Watching the rough ER for the next protein to finish folding.");
+    }
+  }
+
+  /* --- lysosomes: jitter and digest --- */
+  for(i=0;i<LYSO.length;i++){
+    l = LYSO[i];
+    t = now*0.0008 + l.phase;
+    l.node.position.set(
+      l.home.x + Math.sin(t*1.2)*0.11,
+      l.home.y + Math.cos(t*1.05)*0.11,
+      l.home.z + Math.sin(t*0.85+1.1)*0.11);
+    if(l.flash > 0){
+      l.flash -= dt/700;
+      var k = Math.max(0, l.flash);
+      l.node.scale.setScalar(1 + 0.18*k);
+      lysoMat.emissive.copy(lysoMat.color).multiplyScalar(0.22*k);
+    }
+  }
+  var anyFlash = false;
+  for(i=0;i<LYSO.length;i++) if(LYSO[i].flash > 0) anyFlash = true;
+  if(!anyFlash) lysoMat.emissive.setRGB(0,0,0);
+
+  /* --- particles --- */
+  for(i=0;i<particles.length;i++){
+    p = particles[i];
+    if(p.life <= 0) continue;
+    p.life -= dt/1000;
+    if(p.life <= 0){ p.mesh.visible = false; continue; }
+    p.mesh.position.addScaledVector(p.vel, dt/1000);
+    p.vel.multiplyScalar(1 - 0.6*dt/1000);
+    var a = Math.min(1, p.life/p.ttl);
+    p.mesh.scale.setScalar((0.6 + 0.5*a));
+  }
+
+  /* --- rings --- */
+  for(i=0;i<rings.length;i++){
+    var rg = rings[i];
+    if(rg.life <= 0) continue;
+    rg.life -= dt/620;
+    if(rg.life <= 0){ rg.mesh.visible = false; continue; }
+    rg.mesh.scale.setScalar(0.6 + (1-rg.life)*5.2);
+    rg.mesh.material.opacity = rg.life * 0.85;
+    rg.mesh.lookAt(camera.position);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   LOOP
+   ══════════════════════════════════════════════════════════════ */
+var prev = performance.now();
+function tick(now){
+  var raw = Math.min(now - prev, 64); prev = now;
+  requestAnimationFrame(tick);
+  var dt = paused ? 0 : raw * rate;
+
+  if(spinning && !drag && !paused) goal.theta += raw * 0.00006;
+
+  if(follow && followVes && followVes.active){
+    goal.target.lerp(followVes.mesh.position, 0.08);
+    goal.radius += (11 - goal.radius) * 0.03;
+  }
+
+  var e = 1 - Math.pow(0.0025, raw/1000);
+  cam.theta += (goal.theta-cam.theta)*e;
+  cam.phi   += (goal.phi-cam.phi)*e;
+  cam.radius+= (goal.radius-cam.radius)*e;
+  cam.target.lerp(goal.target, e);
+  applyCamera();
+
+  if(dt > 0) simulate(dt, now);
+
+  updateAnnotations();
+  updateScaleBar();
+
+  readoutT -= raw;
+  if(readoutT <= 0){
+    readoutT = 400;
+    var live = 0, i;
+    for(i=0;i<vesicles.length;i++) if(vesicles[i].active) live++;
+    readout.innerHTML =
+      '<div><b>'+live+'</b> vesicles in transit</div>'
+      + '<div><b>'+TRANSLATORS.length+'</b> ribosomes translating</div>'
+      + '<div><b>'+counters.atp.toLocaleString()+'</b> ATP released</div>'
+      + '<div><b>'+counters.exo+'</b> exocytosis events</div>';
+  }
+
+  renderer.render(scene, camera);
+}
+
+resize(); applyCamera(); setCut(true);
+requestAnimationFrame(tick);
+setTimeout(function(){ document.getElementById("boot").classList.add("gone"); }, 450);
+
+})();
+</script>
+
+</body>
+</html>
