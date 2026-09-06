@@ -456,28 +456,30 @@ var rerMat = surface("--rer",{rough:.4, clearcoat:.35, ccRough:.28, env:.9, side
 var rerPts = [], RER_BUD = [];
 (function(){
   var cfg = [
-    {radius:3.85, theta0:2.65, arc:2.70, halfH:2.05, folds:8, fold:0.26, y0: 0.20},
-    {radius:4.48, theta0:2.55, arc:2.85, halfH:2.30, folds:9, fold:0.28, y0:-0.35},
-    {radius:5.10, theta0:2.72, arc:2.60, halfH:2.00, folds:8, fold:0.24, y0: 0.65},
-    {radius:5.70, theta0:2.60, arc:2.40, halfH:1.70, folds:7, fold:0.22, y0:-0.20},
-    {radius:4.20, theta0:1.32, arc:1.30, halfH:1.55, folds:5, fold:0.20, y0: 2.35}
+    {radius:4.00, theta0:1.78, arc:1.15, height:1.05, lift:-2.70},
+    {radius:4.34, theta0:1.60, arc:1.20, height:1.10, lift:-1.35},
+    {radius:4.68, theta0:1.84, arc:1.18, height:1.05, lift: 0.05},
+    {radius:5.02, theta0:1.64, arc:1.15, height:1.00, lift: 1.45},
+    {radius:5.30, theta0:1.88, arc:1.10, height:0.95, lift: 2.80},
+    {radius:4.15, theta0:2.68, arc:1.05, height:0.95, lift: 1.10},
+    {radius:4.50, theta0:2.78, arc:1.00, height:0.90, lift:-0.60},
+    {radius:5.55, theta0:2.35, arc:1.05, height:0.90, lift: 0.55}
   ];
-  var L, c, geo, pos, nor, i, v = new THREE.Vector3(), n = new THREE.Vector3();
+  var L, geo, pos, nor, i, v = new THREE.Vector3(), n = new THREE.Vector3();
   for(L=0;L<cfg.length;L++){
-    c = cfg[L];
-    geo = cisternaTube({center:NUC, radius:c.radius, theta0:c.theta0, arc:c.arc,
-                        halfH:c.halfH, thick:0.085, folds:c.folds, fold:c.fold, y0:c.y0});
+    geo = cisterna({center:NUC, radius:cfg[L].radius, theta0:cfg[L].theta0, arc:cfg[L].arc,
+                    height:cfg[L].height, thick:0.075, lift:cfg[L].lift, seed:L*2.1});
     gRer.add(solid(new THREE.Mesh(geo, rerMat),"rer"));
     pos = geo.attributes.position; nor = geo.attributes.normal;
-    for(i=0;i<pos.count;i+=23){
+    for(i=0;i<pos.count;i+=33){
       v.fromBufferAttribute(pos,i); n.fromBufferAttribute(nor,i);
-      if(n.dot(v.clone().sub(NUC).setY(0).normalize()) < 0.25) continue;
-      rerPts.push(v.clone().add(n.multiplyScalar(0.11)));
+      if(n.dot(v.clone().sub(NUC).normalize()) < 0.1) continue;
+      rerPts.push(v.clone().add(n.multiplyScalar(0.12)));
     }
     RER_BUD.push(new THREE.Vector3(
-      NUC.x + Math.cos(c.theta0 - c.arc*0.5)*c.radius,
-      NUC.y + c.y0,
-      NUC.z + Math.sin(c.theta0 - c.arc*0.5)*c.radius));
+      NUC.x + Math.cos(cfg[L].theta0)*cfg[L].radius,
+      NUC.y + cfg[L].lift,
+      NUC.z + Math.sin(cfg[L].theta0)*cfg[L].radius));
   }
 })();
 
@@ -487,8 +489,8 @@ var riboMat = surface("--ribosome",{rough:.28, clearcoat:.8, ccRough:.15});
 var freeRibo = [];
 (function(){
   var i,r,a,b,p;
-  for(i=0;i<300;i++){
-    r = rr(3.6,9.1); b = Math.acos(1-2*rnd()); a = rnd()*Math.PI*2;
+  for(i=0;i<220;i++){
+    r = rr(3.9,9.0); b = Math.acos(1-2*rnd()); a = rnd()*Math.PI*2;
     p = new THREE.Vector3(Math.sin(b)*Math.cos(a),Math.cos(b),Math.sin(b)*Math.sin(a)).multiplyScalar(r);
     if(p.distanceTo(NUC) < 3.8) continue;
     freeRibo.push(p);
@@ -619,7 +621,7 @@ var LYSO = [];
 
 /* ── crowding: transport vesicles, peroxisomes, lipid droplets ──
       Real cytoplasm is packed. These are unlabelled scene detail. */
-var vesMat2 = surface("--rer",{rough:.3, clearcoat:.3, env:.35, tint:1.25, sat:.55});
+var vesMat2 = surface("--rer",{rough:.38, clearcoat:.18, env:.28, tint:1.02, sat:1.15});
 var peroxMat = surface("--ser",{rough:.42, clearcoat:.2, env:.3, tint:.78, sat:1.3});
 var lipidMat = surface("--ribosome",{rough:.28, clearcoat:.35, env:.4, tint:1.05, sat:.85});
 (function(){
@@ -640,9 +642,9 @@ var lipidMat = surface("--ribosome",{rough:.28, clearcoat:.35, env:.4, tint:1.05
     im.count = made; im.instanceMatrix.needsUpdate = true;
     scene.add(im);
   }
-  scatter(vesMat2,  46, 4.0, 9.0, 0.16, 0.34, 2);  /* transport vesicles */
-  scatter(peroxMat, 16, 4.2, 8.6, 0.22, 0.36, 2);  /* peroxisomes */
-  scatter(lipidMat, 10, 4.4, 8.4, 0.30, 0.52, 3);  /* lipid droplets */
+  scatter(vesMat2,  38, 4.0, 9.0, 0.10, 0.20, 2);  /* transport vesicles */
+  scatter(peroxMat, 14, 4.2, 8.6, 0.15, 0.25, 2);  /* peroxisomes */
+  scatter(lipidMat,  9, 4.4, 8.4, 0.20, 0.34, 3);  /* lipid droplets */
 })();
 
 /* ── centrosome + cytoskeleton (scene detail) ── */
