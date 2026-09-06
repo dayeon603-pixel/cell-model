@@ -3,140 +3,243 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="A eukaryotic animal cell sculpted in Blender and rendered in the browser: eight organelles, cut away.">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔬</text></svg>">
-<style>:root{color-scheme:light dark}html,body{margin:0;padding:0}img{max-width:100%}[hidden]{display:none!important}</style>
-</head>
-<body>
-<title>Cytology Plate One — Sculpt</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@600;700&family=Source+Sans+3:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<title>Cytology Plate One</title>
+<meta name="description" content="Plate I — Eukaryotic animal cell, composite reconstruction. Eight labelled structures.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>&#128300;</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 :root{
-  --bg:#F3F5F7; --ink:#12161C; --ink-2:#4E5866; --ink-3:#7C8794;
-  --panel:rgba(255,255,255,.90); --edge:rgba(16,20,26,.14); --shadow:0 8px 30px rgba(20,28,44,.12);
-  --nucleus:#5B4A7E; --er:#7A5468; --golgi:#9A6428; --mito:#42604F; --lyso:#8C3A36; --membrane:#4E6076;
-  --f-d:"Zilla Slab",Georgia,serif; --f-b:"Source Sans 3",system-ui,sans-serif; --f-m:"IBM Plex Mono",monospace;
+  --paper:#F7F6F2; --plate:#FFFFFF; --ink:#14161A; --ink-2:#4A4F57; --ink-3:#8A8F97;
+  --rule:#C9C6BE; --rule-fine:#E3E0D8; --figure-bg:#EFF1F3;
+  --f-s:"Spectral", Georgia, "Times New Roman", serif;
+  --f-m:"IBM Plex Mono", ui-monospace, Menlo, monospace;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#0B0E13; --ink:#E9ECF1; --ink-2:#9AA5B3; --ink-3:#6C7686;
-  --panel:rgba(14,18,26,.86); --edge:rgba(233,236,241,.16); --shadow:0 8px 34px rgba(0,0,0,.6);
-  --nucleus:#A492D8; --er:#C89AB0; --golgi:#DCA45C; --mito:#7FB894; --lyso:#D98079;
+  --paper:#0D0E11; --plate:#141619; --ink:#E9E7E2; --ink-2:#A6A9AE; --ink-3:#71757C;
+  --rule:#2E3238; --rule-fine:#22262B; --figure-bg:#0A0C0F;
 }}
+:root[data-theme="dark"]{
+  --paper:#0D0E11; --plate:#141619; --ink:#E9E7E2; --ink-2:#A6A9AE; --ink-3:#71757C;
+  --rule:#2E3238; --rule-fine:#22262B; --figure-bg:#0A0C0F;
+}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-b);overflow:hidden}
-.app{position:relative;width:100%;height:100vh;min-height:560px}
-canvas{display:block;width:100%;height:100%;cursor:grab}canvas:active{cursor:grabbing}
-.title{position:absolute;top:24px;left:28px;pointer-events:none}
-.title h1{margin:0;font-family:var(--f-d);font-size:21px;font-weight:700}
-.title .s{margin-top:4px;font-family:var(--f-m);font-size:10px;letter-spacing:.11em;color:var(--ink-3)}
-.rail{position:absolute;top:24px;right:24px;width:230px;background:var(--panel);backdrop-filter:blur(10px);
-  border:1px solid var(--edge);box-shadow:var(--shadow);border-radius:3px;padding:10px}
-.rail .h{font-family:var(--f-m);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);padding:2px 4px 7px}
-.kb{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:9px;width:100%;background:none;border:0;
-  border-left:2px solid transparent;padding:6px;font:inherit;font-size:13px;color:var(--ink);text-align:left;cursor:pointer;border-radius:2px}
-.kb:hover{background:var(--edge)}
-.kb .d{width:9px;height:9px;border-radius:50%;background:var(--c)}
-.kb[aria-current="true"]{background:var(--bg);border-left-color:var(--c);font-weight:600}
-.card{position:absolute;left:28px;bottom:26px;width:340px;max-width:calc(100% - 56px);background:var(--panel);
-  backdrop-filter:blur(10px);border:1px solid var(--edge);border-left:3px solid var(--c,var(--ink));
-  box-shadow:var(--shadow);border-radius:3px;padding:14px 16px;opacity:0;transition:opacity .22s}
-.card.on{opacity:1}
-.card h2{margin:0;font-family:var(--f-d);font-size:18px;font-weight:600}
-.card .sub{font-family:var(--f-m);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-top:3px}
-.card p{margin:8px 0 0;font-size:13.5px;line-height:1.5;color:var(--ink-2)}
-.card dl{display:grid;grid-template-columns:auto 1fr;gap:1px 12px;margin:9px 0 0;font-family:var(--f-m);font-size:10.5px}
-.card dt{color:var(--ink-3);text-transform:uppercase;font-size:9.5px;letter-spacing:.06em}
-.card dd{margin:0;color:var(--ink-2)}
-.dock{position:absolute;left:28px;top:78px;display:flex;flex-direction:column;gap:5px}
-.btn{font-family:var(--f-m);font-size:10px;letter-spacing:.09em;text-transform:uppercase;background:var(--panel);
-  border:1px solid var(--edge);color:var(--ink-2);padding:7px 11px;border-radius:2px;cursor:pointer}
-.btn:hover{color:var(--ink)}
-.boot{position:absolute;inset:0;display:grid;place-content:center;background:var(--bg);color:var(--ink-3);
-  font-family:var(--f-m);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;transition:opacity .5s}
-.boot.gone{opacity:0;pointer-events:none}
-</style>
+html,body{margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-s);font-size:16px;line-height:1.5;
+  -webkit-font-smoothing:antialiased}
+:focus-visible{outline:1.5px solid var(--ink);outline-offset:2px}
 
-<div class="app" id="app">
-  <canvas id="cv"></canvas>
-  <div class="title"><h1>Cytology Plate One</h1><div class="s">SCULPTED IN BLENDER · CYCLES · ø 20 µm</div></div>
-  <div class="dock">
-    <button class="btn" id="bSpin" aria-pressed="true" type="button">Rotation</button>
-    <button class="btn" id="bReset" type="button">Reset view</button>
-    <a class="btn" href="live.html" style="text-decoration:none;display:block">Live version →</a>
+.plate{max-width:1320px;margin:0 auto;padding:26px 30px 30px;min-height:100vh;display:flex;flex-direction:column}
+
+/* ── head ───────────────────────────────────────────── */
+.head{border-bottom:1.5px solid var(--ink);padding-bottom:11px;
+  display:grid;grid-template-columns:1fr auto;align-items:end;gap:14px}
+.head .no{font-family:var(--f-m);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-2)}
+.head h1{margin:3px 0 0;font-weight:500;font-size:clamp(23px,3vw,33px);letter-spacing:.005em;line-height:1.05}
+.head .meta{font-family:var(--f-m);font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink-3);text-align:right;line-height:1.9}
+
+/* ── body: figure + legend ──────────────────────────── */
+.body{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:0;flex:1;min-height:0;
+  border-bottom:1px solid var(--rule)}
+@media (max-width:900px){.body{grid-template-columns:1fr}}
+
+.figure{position:relative;margin:0;background:var(--figure-bg);border-right:1px solid var(--rule);
+  min-height:540px;overflow:hidden}
+@media (max-width:900px){.figure{border-right:0;border-bottom:1px solid var(--rule);min-height:440px}}
+canvas{display:block;width:100%;height:100%;cursor:grab;touch-action:none}
+canvas:active{cursor:grabbing}
+#leaders{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#numerals{position:absolute;inset:0;pointer-events:none}
+.num{position:absolute;transform:translate(-50%,-50%);width:21px;height:21px;border-radius:50%;
+  border:1px solid var(--ink);background:var(--plate);color:var(--ink);
+  font-family:var(--f-m);font-size:11px;font-weight:500;display:grid;place-content:center;
+  opacity:0;transition:opacity .2s, background .15s, color .15s;pointer-events:auto;cursor:pointer}
+.num.on{opacity:1}
+.num.sel{background:var(--ink);color:var(--plate)}
+
+.scale{position:absolute;left:20px;bottom:18px;pointer-events:none;font-family:var(--f-m);
+  font-size:10px;letter-spacing:.1em;color:var(--ink-2)}
+.scale .bar{height:1px;background:var(--ink-2);position:relative;margin-bottom:5px}
+.scale .bar::before,.scale .bar::after{content:"";position:absolute;top:-3px;width:1px;height:7px;background:var(--ink-2)}
+.scale .bar::before{left:0}.scale .bar::after{right:0}
+
+.tools{position:absolute;right:16px;top:16px;display:flex;flex-direction:column;gap:4px}
+.tool{font-family:var(--f-m);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;
+  background:var(--plate);border:1px solid var(--rule);color:var(--ink-2);padding:5px 9px;cursor:pointer;
+  text-decoration:none;display:block;text-align:center}
+.tool:hover{color:var(--ink);border-color:var(--ink-3)}
+.tool[aria-pressed="true"]{color:var(--ink);border-color:var(--ink)}
+
+/* ── legend ─────────────────────────────────────────── */
+.legend{padding:16px 0 16px 20px;overflow-y:auto;max-height:78vh}
+@media (max-width:900px){.legend{max-height:none;padding:16px 0 4px}}
+.legend h2{margin:0 0 10px;font-family:var(--f-m);font-size:10px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--ink-3);font-weight:500}
+.legend ol{list-style:none;margin:0;padding:0}
+.legend li{border-top:1px solid var(--rule-fine)}
+.legend li:first-child{border-top:1px solid var(--rule)}
+.row{display:grid;grid-template-columns:24px 8px 1fr;gap:9px;align-items:start;width:100%;
+  background:none;border:0;padding:9px 4px 9px 0;text-align:left;font:inherit;color:var(--ink);cursor:pointer}
+.row:hover{background:var(--rule-fine)}
+.row .n{font-family:var(--f-m);font-size:11.5px;color:var(--ink-2);padding-top:2px;font-variant-numeric:tabular-nums}
+.row .sw{width:8px;height:8px;margin-top:6px;background:var(--c);border-radius:1px}
+.row .nm{font-size:15px;line-height:1.3}
+.row .lat{display:block;font-style:italic;font-weight:300;font-size:12.5px;color:var(--ink-3);margin-top:1px}
+.row[aria-expanded="true"]{background:var(--rule-fine)}
+.row[aria-expanded="true"] .nm{font-weight:600}
+.detail{display:none;padding:0 4px 13px 41px}
+.detail.on{display:block}
+.detail p{margin:0 0 8px;font-size:13.5px;line-height:1.55;color:var(--ink-2)}
+.detail dl{display:grid;grid-template-columns:auto 1fr;gap:1px 10px;margin:0;
+  font-family:var(--f-m);font-size:10.5px}
+.detail dt{color:var(--ink-3);text-transform:uppercase;letter-spacing:.07em;font-size:9.5px;padding-top:1px}
+.detail dd{margin:0;color:var(--ink-2);font-variant-numeric:tabular-nums}
+
+/* ── caption ────────────────────────────────────────── */
+.foot{padding-top:11px;display:grid;grid-template-columns:1fr auto;gap:18px;align-items:start}
+.foot p{margin:0;font-size:12.5px;line-height:1.6;color:var(--ink-2);max-width:76ch}
+.foot p b{font-weight:600;color:var(--ink)}
+.foot .credit{font-family:var(--f-m);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-3);text-align:right;line-height:1.9;white-space:nowrap}
+@media (max-width:760px){.foot{grid-template-columns:1fr}.foot .credit{text-align:left}}
+
+.boot{position:absolute;inset:0;display:grid;place-content:center;background:var(--figure-bg);
+  color:var(--ink-3);font-family:var(--f-m);font-size:10px;letter-spacing:.2em;text-transform:uppercase;
+  transition:opacity .5s}
+.boot.gone{opacity:0;pointer-events:none}
+@media print{
+  body{background:#fff}
+  .tools{display:none}
+  .plate{max-width:none;padding:0}
+  .detail{display:block}
+}
+</style>
+</head>
+<body>
+<div class="plate">
+
+  <header class="head">
+    <div>
+      <div class="no">Plate I</div>
+      <h1>Eukaryotic Animal Cell</h1>
+    </div>
+    <div class="meta">
+      Composite reconstruction<br>
+      Diameter ≈ 20 µm · 8 structures<br>
+      Specimen A-1
+    </div>
+  </header>
+
+  <div class="body">
+    <figure class="figure" id="figure">
+      <canvas id="cv" aria-label="Three-dimensional reconstruction of an animal cell, cut away to show eight labelled structures."></canvas>
+      <svg id="leaders" aria-hidden="true"></svg>
+      <div id="numerals"></div>
+      <div class="scale"><div class="bar" id="sbar" style="width:80px"></div><span id="sbarL">5 µm</span></div>
+      <div class="tools">
+        <button class="tool" id="bSpin" type="button" aria-pressed="true">Rotate</button>
+        <button class="tool" id="bReset" type="button">Reset</button>
+        <a class="tool" href="live.html">Animated →</a>
+      </div>
+      <div class="boot" id="boot">Loading plate…</div>
+    </figure>
+
+    <aside class="legend">
+      <h2>Legend</h2>
+      <ol id="legend"></ol>
+    </aside>
   </div>
-  <div class="rail" id="rail"><div class="h">Key to structures</div></div>
-  <div class="card" id="card"></div>
-  <div class="boot" id="boot">Loading sculpt…</div>
+
+  <footer class="foot">
+    <p><b>Fig. 1.</b> Eukaryotic animal cell, cut away along a sagittal plane to expose the
+      endomembrane system. Structures are numbered on the figure and identified opposite;
+      select a numeral or a legend entry for the full description. Organelle counts are reduced
+      for legibility and ribosomes are drawn above true scale (25–30 nm); all stated dimensions
+      are the accepted values for a generic mammalian cell.</p>
+    <div class="credit">
+      Modelled in Blender 5.0 · Cycles<br>
+      Rendered in WebGL · three.js<br>
+      Prepared by Dayeon Kang
+    </div>
+  </footer>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="GLTFLoader.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 (function(){
 "use strict";
+
 var ORG=[
- {k:"plasma_membrane",n:"Plasma membrane",s:"Phospholipid bilayer",c:"#6E8296",
-  t:"A double layer of phospholipids ~7 nm thick. Channels admit chosen ions, pumps spend ATP to push them back, receptors read outside signals without letting them in.",
-  d:[["Thickness","7–8 nm"],["ATP cost","20–30% at rest"]]},
- {k:"chromatin",n:"Nucleus",s:"Chromatin, envelope, nucleolus",c:"#8C6AE0",
-  t:"Two metres of DNA packed into a 6 µm sphere behind a double membrane pierced by thousands of pores. Transcription happens here; only finished mRNA is exported.",
-  d:[["Diameter","5–10 µm"],["DNA","≈2 m"],["Pores","2,000–4,000"]]},
- {k:"rough_ER",n:"Rough ER",s:"Ribosome-studded cisternae",c:"#C88AA4",
-  t:"Flattened sacs continuous with the nuclear envelope. New proteins thread through the membrane as they are built, are folded by chaperones, and anything misfolded is destroyed.",
-  d:[["Membrane","≈50% of cell"],["Traffic","≈1/3 of proteins"]]},
- {k:"ribosomes",n:"Ribosomes",s:"Free and bound",c:"#7A6A55",
-  t:"Reads mRNA three bases at a time, forging one peptide bond per codon at 15–20 amino acids a second. The catalytic site is RNA, not protein.",
-  d:[["Size","25–30 nm"],["Count","≈10 million"]]},
- {k:"golgi",n:"Golgi apparatus",s:"Cis-to-trans stack",c:"#C8873C",
-  t:"Cargo enters the cis face, moves through the stack while its sugar chains are rebuilt, and leaves the trans face sorted by destination via a mannose-6-phosphate tag.",
-  d:[["Cisternae","4–8"],["Found","Golgi, 1898"]]},
- {k:"mito",n:"Mitochondrion",s:"Oxidative phosphorylation",c:"#5E9A74",
-  t:"Pumps protons across the folded inner membrane; they return only through ATP synthase, a turbine that spins as they pass — about 30 ATP per glucose. Keeps its own circular DNA.",
-  d:[["Length","1–4 µm"],["Per liver cell","1,000–2,000"]]},
- {k:"lysosome",n:"Lysosome",s:"Acidic compartment",c:"#B4514C",
-  t:"Around 60 enzymes that work only in acid, with pumps holding the interior at pH 4.5. Worn-out organelles and swallowed bacteria are delivered here and dismantled.",
-  d:[["Diameter","0.1–1.2 µm"],["Interior","pH 4.5–5.0"]]},
- {k:"vesicle",n:"Transport vesicles",s:"Membrane traffic",c:"#5E7488",
-  t:"Membrane spheres ferrying cargo between compartments — ER to Golgi, Golgi to the surface or to a lysosome. Each carries an address that decides where it may fuse.",
-  d:[["Diameter","50–100 nm"],["Coat","COPI / COPII / clathrin"]]}
+ {k:"plasma_membrane",n:"Plasma membrane",lat:"Membrana plasmatica",c:"#6E8296",
+  t:"A double layer of phospholipids whose water-hating tails face inward, making the membrane an automatic barrier to ions and polar molecules. Channels admit chosen ions down a gradient, pumps spend ATP to drive them back, and receptors read signals from outside without admitting the signal itself.",
+  d:[["Thickness","7–8 nm"],["Composition","≈50% lipid / 50% protein"],["Model","Singer & Nicolson, 1972"]]},
+ {k:"chromatin",n:"Nucleus",lat:"Nucleus, cum nucleolo",c:"#8C6AE0",
+  t:"Holds roughly two metres of DNA as chromatin within a double membrane pierced by thousands of pore complexes. Transcription and RNA editing occur here and only finished messenger RNA is exported; the dense nucleolus assembles ribosomal subunits.",
+  d:[["Diameter","5–10 µm"],["DNA length","≈2 m per diploid cell"],["Nuclear pores","2,000–4,000"],["Described","Robert Brown, 1831"]]},
+ {k:"rough_ER",n:"Rough endoplasmic reticulum",lat:"Reticulum endoplasmicum granulosum",c:"#C88AA4",
+  t:"Flattened cisternae continuous with the outer nuclear envelope. Nascent polypeptides are threaded through the membrane as they are built, folded by chaperones and glycosylated within the lumen; anything that fails to fold correctly is retrieved and destroyed.",
+  d:[["Membrane share","≈50% of cell total"],["Protein traffic","≈1/3 of the proteome"],["Described","Porter, Claude & Fullam, 1945"]]},
+ {k:"ribosomes",n:"Ribosomes",lat:"Ribosomata",c:"#7A6A55",
+  t:"Reads messenger RNA three bases at a time, accepting the matching transfer RNA and forging one peptide bond per codon at 15–20 amino acids per second. The catalytic centre is built from RNA rather than protein.",
+  d:[["Diameter","25–30 nm"],["Count per cell","≈10 million"],["Eukaryotic form","80S (60S + 40S)"],["Discovered","George Palade, 1955"]]},
+ {k:"golgi",n:"Golgi apparatus",lat:"Apparatus golgiensis",c:"#C8873C",
+  t:"A polarised stack of cisternae. Cargo enters at the cis face, is progressively reworked as its sugar chains are trimmed and rebuilt, and departs the trans face sorted by destination — lysosomal enzymes carrying a mannose-6-phosphate tag that acts as the address.",
+  d:[["Cisternae per stack","4–8"],["Stack width","1–2 µm"],["Discovered","Camillo Golgi, 1898"]]},
+ {k:"mito",n:"Mitochondrion",lat:"Mitochondrion",c:"#5E9A74",
+  t:"Electrons stripped from food descend a chain of complexes in the folded inner membrane, pumping protons outward. The protons return only through ATP synthase, a rotary turbine yielding some thirty molecules of ATP per glucose. Retains its own circular genome and 70S ribosomes.",
+  d:[["Length","1–4 µm"],["Width","0.5–1 µm"],["Count (liver cell)","1,000–2,000"],["Named","Carl Benda, 1898"]]},
+ {k:"lysosome",n:"Lysosome",lat:"Lysosoma",c:"#B4514C",
+  t:"Contains some sixty acid hydrolases held at pH 4.5 by membrane proton pumps. Exhausted organelles and engulfed bacteria are delivered here and dismantled; the acid dependence is itself the safety interlock, since rupture into neutral cytosol inactivates the enzymes.",
+  d:[["Diameter","0.1–1.2 µm"],["Interior pH","4.5–5.0"],["Enzymes","≈60 acid hydrolases"],["Discovered","Christian de Duve, 1955"]]},
+ {k:"vesicle",n:"Transport vesicles",lat:"Vesiculae transportatoriae",c:"#5E7488",
+  t:"Membrane-bounded spheres carrying cargo between compartments — endoplasmic reticulum to Golgi, Golgi to the cell surface or to a lysosome. Each bears a coat and an address that determines where it is permitted to fuse.",
+  d:[["Diameter","50–100 nm"],["Coats","COPI · COPII · clathrin"]]}
 ];
 
-var app=document.getElementById("app"),canvas=document.getElementById("cv");
+var figure=document.getElementById("figure"), canvas=document.getElementById("cv");
 var renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:true});
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
 renderer.outputEncoding=THREE.sRGBEncoding;
 renderer.toneMapping=THREE.NoToneMapping;
 var scene=new THREE.Scene();
-var camera=new THREE.PerspectiveCamera(40,1.6,0.1,500);
+var camera=new THREE.PerspectiveCamera(40,1.6,0.1,600);
 
-function env(){
+function buildEnv(){
   var c=document.createElement("canvas");c.width=512;c.height=256;var g=c.getContext("2d");
   var gr=g.createLinearGradient(0,0,0,256);
-  gr.addColorStop(0,"#ffffff");gr.addColorStop(.5,"#dfe5ec");gr.addColorStop(1,"#9aa4b2");
+  gr.addColorStop(0,"#ffffff");gr.addColorStop(.5,"#e2e7ee");gr.addColorStop(1,"#9ba5b3");
   g.fillStyle=gr;g.fillRect(0,0,512,256);
-  var rg=g.createRadialGradient(150,50,0,150,50,130);
+  var rg=g.createRadialGradient(150,50,0,150,50,135);
   rg.addColorStop(0,"rgba(255,255,255,.95)");rg.addColorStop(1,"rgba(255,255,255,0)");
-  g.fillStyle=rg;g.beginPath();g.arc(150,50,130,0,6.28);g.fill();
+  g.fillStyle=rg;g.beginPath();g.arc(150,50,135,0,6.283);g.fill();
   var t=new THREE.CanvasTexture(c);t.mapping=THREE.EquirectangularReflectionMapping;
   var p=new THREE.PMREMGenerator(renderer);p.compileEquirectangularShader();
   var e=p.fromEquirectangular(t).texture;p.dispose();t.dispose();return e;
 }
-scene.environment=env();
-var key=new THREE.DirectionalLight(0xffffff,1.5);key.position.set(16,22,14);scene.add(key);
-scene.add(new THREE.DirectionalLight(0xbdd3f2,.5).translateX(-18));
-scene.add(new THREE.AmbientLight(0xffffff,.42));
+scene.environment=buildEnv();
+var key=new THREE.DirectionalLight(0xffffff,1.35);key.position.set(16,22,14);scene.add(key);
+var fill=new THREE.DirectionalLight(0xc4d6ef,.45);fill.position.set(-18,-6,-12);scene.add(fill);
+scene.add(new THREE.AmbientLight(0xffffff,.40));
 
 function isDark(){var a=document.documentElement.getAttribute("data-theme");
-  if(a==="dark")return true;if(a==="light")return false;
-  return matchMedia("(prefers-color-scheme: dark)").matches;}
-function paintBg(){renderer.setClearColor(new THREE.Color(isDark()?0x0B0E13:0xF3F5F7),1);}
-paintBg();matchMedia("(prefers-color-scheme: dark)").addEventListener("change",paintBg);
+  if(a==="dark")return true; if(a==="light")return false;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches;}
+function paintBg(){
+  var cs=getComputedStyle(document.documentElement).getPropertyValue("--figure-bg").trim();
+  renderer.setClearColor(new THREE.Color(cs||"#EFF1F3"),1);
+}
+paintBg();
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",paintBg);
 
-var picks=[],byKey={},root=null;
+/* ── load the sculpt ── */
+var picks=[], anchors={}, loaded=false;
 function keyFor(name){
-  name=name.toLowerCase();
+  name=(name||"").toLowerCase();
   if(name.indexOf("plasma")>=0)return "plasma_membrane";
-  if(name.indexOf("chromatin")>=0||name.indexOf("envelope")>=0||name.indexOf("nucleol")>=0||name.indexOf("pore")>=0||name.indexOf("torus")>=0)return "chromatin";
+  if(name.indexOf("chromatin")>=0||name.indexOf("envelope")>=0||name.indexOf("nucleol")>=0||name.indexOf("torus")>=0)return "chromatin";
   if(name.indexOf("rough_er")>=0)return "rough_ER";
   if(name.indexOf("ribosome")>=0)return "ribosomes";
   if(name.indexOf("golgi")>=0)return "golgi";
@@ -146,83 +249,160 @@ function keyFor(name){
   return null;
 }
 new THREE.GLTFLoader().load("cell.glb",function(gltf){
-  root=gltf.scene;
-  var box=new THREE.Box3().setFromObject(root),ctr=box.getCenter(new THREE.Vector3());
-  root.position.sub(ctr);
+  var root=gltf.scene;
+  var box=new THREE.Box3().setFromObject(root);
+  root.position.sub(box.getCenter(new THREE.Vector3()));
+  var boxes={};
   root.traverse(function(o){
     if(!o.isMesh)return;
-    o.castShadow=o.receiveShadow=false;
     var k=keyFor(o.name);
-    if(k){o.userData.key=k;picks.push(o);(byKey[k]=byKey[k]||[]).push(o);}
-    if(o.material){o.material.side=THREE.DoubleSide;o.material.envMapIntensity=.55;}
+    if(o.material){o.material.side=THREE.DoubleSide;o.material.envMapIntensity=.5;}
+    if(!k)return;
+    o.userData.key=k; picks.push(o);
+    o.updateWorldMatrix(true,false);
+    var b=new THREE.Box3().setFromObject(o);
+    boxes[k]=boxes[k]?boxes[k].union(b):b;
   });
   scene.add(root);
+  /* anchor each numeral at the centroid of that structure */
+  Object.keys(boxes).forEach(function(k){ anchors[k]=boxes[k].getCenter(new THREE.Vector3()); });
+  if(anchors["plasma_membrane"]) anchors["plasma_membrane"].set(-8.4,-2.0,-3.0);
   var sph=new THREE.Box3().setFromObject(root).getBoundingSphere(new THREE.Sphere());
-  var fit=sph.radius/Math.sin(camera.fov*Math.PI/360)*0.72;
-  goal.r=fit; cam.r=fit*1.25;
+  var fit=sph.radius/Math.sin(camera.fov*Math.PI/360)*0.74;
+  goal.r=fit; cam.r=fit*1.22;
+  loaded=true;
   document.getElementById("boot").classList.add("gone");
-},undefined,function(){document.getElementById("boot").textContent="Could not load cell.glb";});
+},undefined,function(){document.getElementById("boot").textContent="cell.glb failed to load";});
 
-var cam={th:0.86,ph:1.16,r:34,t:new THREE.Vector3()},goal={th:0.86,ph:1.16,r:27},spin=true;
-function place(){cam.ph=Math.max(.15,Math.min(Math.PI-.15,cam.ph));
+/* ── camera ── */
+var cam={th:0.86,ph:1.16,r:34,t:new THREE.Vector3()}, goal={th:0.86,ph:1.16,r:27}, spin=true;
+function place(){
+  cam.ph=Math.max(.12,Math.min(Math.PI-.12,cam.ph));
   camera.position.set(cam.r*Math.sin(cam.ph)*Math.cos(cam.th),cam.r*Math.cos(cam.ph),cam.r*Math.sin(cam.ph)*Math.sin(cam.th));
-  camera.lookAt(cam.t);}
+  camera.lookAt(cam.t);
+}
 var drag=null;
 canvas.addEventListener("pointerdown",function(e){drag={x:e.clientX,y:e.clientY,m:0};canvas.setPointerCapture(e.pointerId);});
-canvas.addEventListener("pointermove",function(e){if(!drag)return;
+canvas.addEventListener("pointermove",function(e){
+  if(!drag)return;
   var dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.m+=Math.abs(dx)+Math.abs(dy);
   goal.th-=dx*.006;goal.ph-=dy*.006;cam.th-=dx*.006;cam.ph-=dy*.006;
-  goal.ph=Math.max(.15,Math.min(Math.PI-.15,goal.ph));drag.x=e.clientX;drag.y=e.clientY;spin=false;
-  document.getElementById("bSpin").setAttribute("aria-pressed","false");});
-canvas.addEventListener("pointerup",function(e){if(drag&&drag.m<6)click(e);drag=null;});
+  goal.ph=Math.max(.12,Math.min(Math.PI-.12,goal.ph));
+  drag.x=e.clientX;drag.y=e.clientY;setSpin(false);
+});
+canvas.addEventListener("pointerup",function(e){if(drag&&drag.m<6)pick(e);drag=null;});
 canvas.addEventListener("wheel",function(e){e.preventDefault();
-  goal.r=Math.max(6,Math.min(70,goal.r*(1+Math.sign(e.deltaY)*.09)));},{passive:false});
+  goal.r=Math.max(5,Math.min(80,goal.r*(1+Math.sign(e.deltaY)*.09)));},{passive:false});
 
-var ray=new THREE.Raycaster(),ndc=new THREE.Vector2(),card=document.getElementById("card");
-function click(e){
+var ray=new THREE.Raycaster(), ndc=new THREE.Vector2();
+function pick(e){
   var r=canvas.getBoundingClientRect();
-  ndc.x=((e.clientX-r.left)/r.width)*2-1;ndc.y=-((e.clientY-r.top)/r.height)*2+1;
+  ndc.x=((e.clientX-r.left)/r.width)*2-1; ndc.y=-((e.clientY-r.top)/r.height)*2+1;
   ray.setFromCamera(ndc,camera);
   var h=ray.intersectObjects(picks,false);
-  if(h.length)select(h[0].object.userData.key);
+  if(h.length)select(h[0].object.userData.key); else select(null);
 }
-function org(k){for(var i=0;i<ORG.length;i++)if(ORG[i].k===k)return ORG[i];return null;}
-function select(k){
-  var o=org(k);if(!o)return;
-  card.style.setProperty("--c",o.c);
-  var d="";for(var i=0;i<o.d.length;i++)d+="<dt>"+o.d[i][0]+"</dt><dd>"+o.d[i][1]+"</dd>";
-  card.innerHTML="<h2>"+o.n+"</h2><div class='sub'>"+o.s+"</div><p>"+o.t+"</p><dl>"+d+"</dl>";
-  card.classList.add("on");
-  var b=rail.querySelectorAll(".kb");
-  for(i=0;i<b.length;i++)b[i].setAttribute("aria-current",b[i].dataset.k===k?"true":"false");
-}
-var rail=document.getElementById("rail");
-ORG.forEach(function(o){
-  var b=document.createElement("button");b.className="kb";b.type="button";b.dataset.k=o.k;
-  b.style.setProperty("--c",o.c);b.innerHTML="<span class='d'></span><span>"+o.n+"</span>";
-  rail.appendChild(b);
-});
-rail.addEventListener("click",function(e){var b=e.target.closest(".kb");if(b)select(b.dataset.k);});
-document.getElementById("bSpin").addEventListener("click",function(){
-  spin=!spin;this.setAttribute("aria-pressed",spin?"true":"false");});
-document.getElementById("bReset").addEventListener("click",function(){
-  goal.th=0.86;goal.ph=1.16;goal.r=27;card.classList.remove("on");
-  var b=rail.querySelectorAll(".kb");for(var i=0;i<b.length;i++)b[i].setAttribute("aria-current","false");});
 
-function resize(){var w=app.clientWidth,h=app.clientHeight;if(!w||!h)return;
-  renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
-addEventListener("resize",resize);resize();
+/* ── legend ── */
+var legend=document.getElementById("legend"), selected=null;
+ORG.forEach(function(o,i){
+  var li=document.createElement("li");
+  var d="";for(var j=0;j<o.d.length;j++)d+="<dt>"+o.d[j][0]+"</dt><dd>"+o.d[j][1]+"</dd>";
+  li.innerHTML=
+    '<button class="row" type="button" data-k="'+o.k+'" aria-expanded="false" style="--c:'+o.c+'">'
+    +'<span class="n">'+(i+1)+'</span><span class="sw"></span>'
+    +'<span class="nm">'+o.n+'<span class="lat">'+o.lat+'</span></span></button>'
+    +'<div class="detail" id="d-'+o.k+'"><p>'+o.t+'</p><dl>'+d+'</dl></div>';
+  legend.appendChild(li);
+});
+legend.addEventListener("click",function(e){
+  var b=e.target.closest(".row"); if(b) select(b.dataset.k===selected?null:b.dataset.k);
+});
+function select(k){
+  selected=k;
+  legend.querySelectorAll(".row").forEach(function(b){
+    var on=b.dataset.k===k;
+    b.setAttribute("aria-expanded",on?"true":"false");
+    document.getElementById("d-"+b.dataset.k).classList.toggle("on",on);
+  });
+  Object.keys(numEls).forEach(function(key){ numEls[key].classList.toggle("sel",key===k); });
+}
+
+/* ── numerals + leader lines ── */
+var numHost=document.getElementById("numerals"), leaders=document.getElementById("leaders"), numEls={};
+ORG.forEach(function(o,i){
+  var el=document.createElement("button");
+  el.className="num"; el.type="button"; el.textContent=String(i+1);
+  el.addEventListener("click",function(){ select(o.k===selected?null:o.k); });
+  numHost.appendChild(el); numEls[o.k]=el;
+});
+var _v=new THREE.Vector3();
+function layout(){
+  if(!loaded)return;
+  var r=canvas.getBoundingClientRect(), placed=[], lines="";
+  ORG.forEach(function(o,i){
+    var a=anchors[o.k], el=numEls[o.k];
+    if(!a){el.classList.remove("on");return;}
+    _v.copy(a).project(camera);
+    if(_v.z>1){el.classList.remove("on");return;}
+    placed.push({o:o,el:el,ax:(_v.x*.5+.5)*r.width,ay:(-_v.y*.5+.5)*r.height,i:i});
+  });
+  placed.sort(function(p,q){return p.ay-q.ay;});
+  for(var i=1;i<placed.length;i++){
+    var A=placed[i-1],B=placed[i];
+    if(B.ay-A.ay<25 && Math.abs(B.ax-A.ax)<52) B.ay=A.ay+25;
+  }
+  placed.forEach(function(p){
+    var x=Math.max(16,Math.min(r.width-16,p.ax)), y=Math.max(14,Math.min(r.height-32,p.ay));
+    p.el.style.left=x+"px"; p.el.style.top=y+"px"; p.el.classList.add("on");
+    if(Math.abs(x-p.ax)>2||Math.abs(y-p.ay)>2){
+      lines+='<line x1="'+p.ax.toFixed(1)+'" y1="'+p.ay.toFixed(1)+'" x2="'+x.toFixed(1)+'" y2="'+y.toFixed(1)
+           +'" stroke="currentColor" stroke-width="0.75" opacity=".5"/>';
+    }
+  });
+  leaders.setAttribute("viewBox","0 0 "+r.width+" "+r.height);
+  leaders.style.color=getComputedStyle(document.documentElement).getPropertyValue("--ink-2").trim();
+  leaders.innerHTML=lines;
+}
+
+/* ── scale bar ── */
+var sbar=document.getElementById("sbar"), sbarL=document.getElementById("sbarL");
+var STEPS=[0.5,1,2,5,10];
+function scaleBar(){
+  var h=canvas.clientHeight;
+  var ppu=(h/2)/(cam.r*Math.tan(camera.fov*Math.PI/360));
+  var chosen=STEPS[0];
+  for(var i=0;i<STEPS.length;i++){chosen=STEPS[i];if(chosen*ppu>=48&&chosen*ppu<=150)break;}
+  sbar.style.width=Math.max(20,Math.min(190,Math.round(chosen*ppu)))+"px";
+  sbarL.textContent=chosen+" µm";
+}
+
+/* ── controls ── */
+var bSpin=document.getElementById("bSpin");
+function setSpin(v){spin=v;bSpin.setAttribute("aria-pressed",v?"true":"false");}
+bSpin.addEventListener("click",function(){setSpin(!spin);});
+document.getElementById("bReset").addEventListener("click",function(){
+  goal.th=0.86;goal.ph=1.16;select(null);setSpin(true);
+});
+
+function resize(){
+  var w=figure.clientWidth,h=figure.clientHeight;
+  if(!w||!h)return;
+  renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
+}
+window.addEventListener("resize",resize);resize();
 
 var prev=performance.now();
-(function tick(now){requestAnimationFrame(tick);
+(function tick(now){
+  requestAnimationFrame(tick);
   var dt=Math.min(now-prev,64);prev=now;
-  if(spin&&!drag)goal.th+=dt*0.00007;
+  if(spin&&!drag)goal.th+=dt*0.00006;
   var e=1-Math.pow(0.0025,dt/1000);
   cam.th+=(goal.th-cam.th)*e;cam.ph+=(goal.ph-cam.ph)*e;cam.r+=(goal.r-cam.r)*e;
-  place();renderer.render(scene,camera);
+  place();layout();scaleBar();
+  renderer.render(scene,camera);
 })(prev);
 })();
 </script>
-
 </body>
 </html>
