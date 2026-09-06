@@ -166,8 +166,8 @@ canvas:active{cursor:grabbing}
   </footer>
 </div>
 
-<script src="GLTFLoader.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="GLTFLoader.js"></script>
 <script>
 (function(){
 "use strict";
@@ -234,7 +234,7 @@ function paintBg(){
 paintBg();
 window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",paintBg);
 
-/* ── load the sculpt ── */
+/* ── load the sculpt (guarded: a failure must not blank the legend) ── */
 var picks=[], anchors={}, loaded=false;
 function keyFor(name){
   name=(name||"").toLowerCase();
@@ -248,7 +248,8 @@ function keyFor(name){
   if(name.indexOf("vesicle")>=0)return "vesicle";
   return null;
 }
-new THREE.GLTFLoader().load("cell.glb",function(gltf){
+if(!THREE.GLTFLoader){document.getElementById('boot').textContent='GLTFLoader unavailable';}
+else new THREE.GLTFLoader().load("cell.glb",function(gltf){
   var root=gltf.scene;
   var box=new THREE.Box3().setFromObject(root);
   root.position.sub(box.getCenter(new THREE.Vector3()));
