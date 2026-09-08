@@ -52,7 +52,7 @@ canvas:active{cursor:grabbing}
 .tag{
   position:absolute; transform:translate(-50%,-50%); white-space:nowrap;
   font-family:var(--f-mono); font-size:10.5px; letter-spacing:.05em;
-  background:var(--panel); backdrop-filter:blur(6px); border:1px solid currentColor;
+  background:linear-gradient(150deg, rgba(255,255,255,.74), rgba(255,255,255,.46)); -webkit-backdrop-filter:blur(16px) saturate(180%); backdrop-filter:blur(16px) saturate(180%); border:1px solid rgba(255,255,255,.8);
   padding:3px 10px; border-radius:999px; opacity:0; transition:opacity .2s ease;
 }
 .tag.on{opacity:1}
@@ -84,7 +84,7 @@ canvas:active{cursor:grabbing}
 /* ── key rail ── */
 .rail{
   position:absolute; top:26px; right:26px; width:238px;
-  background:var(--panel); backdrop-filter:blur(10px); border:1px solid var(--edge);
+  background:linear-gradient(150deg, rgba(255,255,255,.66), rgba(255,255,255,.40)); -webkit-backdrop-filter:blur(24px) saturate(180%); backdrop-filter:blur(24px) saturate(180%); border:1px solid rgba(255,255,255,.72);
   box-shadow:var(--shadow); border-radius:16px; padding:12px; display:flex; flex-direction:column; gap:2px;
 }
 .rail .hd{font-family:var(--f-mono); font-size:9.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3); padding:2px 4px 6px}
@@ -105,7 +105,7 @@ canvas:active{cursor:grabbing}
 }
 .btn{
   font-family:var(--f-mono); font-size:10px; letter-spacing:.09em; text-transform:uppercase;
-  background:var(--panel); backdrop-filter:blur(8px); color:var(--ink-2);
+  background:linear-gradient(150deg, rgba(255,255,255,.70), rgba(255,255,255,.42)); -webkit-backdrop-filter:blur(18px) saturate(180%); backdrop-filter:blur(18px) saturate(180%); color:var(--ink-2);
   border:1px solid var(--edge); padding:7px 12px; border-radius:9px; cursor:pointer;
   transition:color .15s, border-color .15s, background .15s;
 }
@@ -124,7 +124,7 @@ canvas:active{cursor:grabbing}
 .narrate{
   position:absolute; left:50%; bottom:78px; transform:translateX(-50%);
   width:min(560px, calc(100% - 60px)); pointer-events:none;
-  background:var(--panel); backdrop-filter:blur(10px); border:1px solid var(--edge);
+  background:linear-gradient(150deg, rgba(255,255,255,.66), rgba(255,255,255,.40)); -webkit-backdrop-filter:blur(24px) saturate(180%); backdrop-filter:blur(24px) saturate(180%); border:1px solid rgba(255,255,255,.72);
   border-left:3px solid var(--rer); box-shadow:var(--shadow); border-radius:14px;
   padding:12px 16px 13px; opacity:0; transition:opacity .25s ease;
 }
