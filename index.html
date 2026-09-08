@@ -10,19 +10,13 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
+color-scheme: light;
 :root{
-  --paper:#F7F6F2; --plate:#FFFFFF; --ink:#14161A; --ink-2:#4A4F57; --ink-3:#8A8F97;
-  --rule:#C9C6BE; --rule-fine:#E3E0D8; --figure-bg:#EFF1F3;
+  --paper:#FFFFFF; --plate:#FFFFFF; --figure-bg:#FFFFFF;
+  --ink:#15171B; --ink-2:#4F545C; --ink-3:#8B9099;
+  --rule:#1A1C20; --rule-mid:#CFCEC9; --rule-fine:#E8E7E3;
   --f-s:"Spectral", Georgia, "Times New Roman", serif;
   --f-m:"IBM Plex Mono", ui-monospace, Menlo, monospace;
-}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --paper:#0D0E11; --plate:#141619; --ink:#E9E7E2; --ink-2:#A6A9AE; --ink-3:#71757C;
-  --rule:#2E3238; --rule-fine:#22262B; --figure-bg:#0A0C0F;
-}}
-:root[data-theme="dark"]{
-  --paper:#0D0E11; --plate:#141619; --ink:#E9E7E2; --ink-2:#A6A9AE; --ink-3:#71757C;
-  --rule:#2E3238; --rule-fine:#22262B; --figure-bg:#0A0C0F;
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
@@ -41,19 +35,19 @@ body{background:var(--paper);color:var(--ink);font-family:var(--f-s);font-size:1
   color:var(--ink-3);text-align:right;line-height:1.9}
 
 /* ── body: figure + legend ──────────────────────────── */
-.body{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:0;flex:1;min-height:0;
-  border-bottom:1px solid var(--rule)}
+.body{display:grid;grid-template-columns:minmax(0,1fr) 296px;gap:0;flex:1;min-height:0;
+  border-bottom:1px solid var(--rule-mid)}
 @media (max-width:900px){.body{grid-template-columns:1fr}}
 
-.figure{position:relative;margin:0;background:var(--figure-bg);border-right:1px solid var(--rule);
+.figure{position:relative;margin:0;background:var(--figure-bg);border-right:1px solid var(--rule-mid);
   min-height:540px;overflow:hidden}
-@media (max-width:900px){.figure{border-right:0;border-bottom:1px solid var(--rule);min-height:440px}}
+@media (max-width:900px){.figure{border-right:0;border-bottom:1px solid var(--rule-mid);min-height:440px}}
 canvas{display:block;width:100%;height:100%;cursor:grab;touch-action:none}
 canvas:active{cursor:grabbing}
 #leaders{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 #numerals{position:absolute;inset:0;pointer-events:none}
-.num{position:absolute;transform:translate(-50%,-50%);width:21px;height:21px;border-radius:50%;
-  border:1px solid var(--ink);background:var(--plate);color:var(--ink);
+.num{position:absolute;transform:translate(-50%,-50%);width:22px;height:22px;border-radius:50%;
+  border:1px solid var(--ink);background:rgba(255,255,255,.94);color:var(--ink);
   font-family:var(--f-m);font-size:11px;font-weight:500;display:grid;place-content:center;
   opacity:0;transition:opacity .2s, background .15s, color .15s;pointer-events:auto;cursor:pointer}
 .num.on{opacity:1}
@@ -67,7 +61,7 @@ canvas:active{cursor:grabbing}
 
 .tools{position:absolute;right:16px;top:16px;display:flex;flex-direction:column;gap:4px}
 .tool{font-family:var(--f-m);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;
-  background:var(--plate);border:1px solid var(--rule);color:var(--ink-2);padding:5px 9px;cursor:pointer;
+  background:var(--plate);border:1px solid var(--rule-mid);color:var(--ink-2);padding:5px 9px;cursor:pointer;
   text-decoration:none;display:block;text-align:center}
 .tool:hover{color:var(--ink);border-color:var(--ink-3)}
 .tool[aria-pressed="true"]{color:var(--ink);border-color:var(--ink)}
@@ -79,7 +73,7 @@ canvas:active{cursor:grabbing}
   text-transform:uppercase;color:var(--ink-3);font-weight:500}
 .legend ol{list-style:none;margin:0;padding:0}
 .legend li{border-top:1px solid var(--rule-fine)}
-.legend li:first-child{border-top:1px solid var(--rule)}
+.legend li:first-child{border-top:1px solid var(--rule-mid)}
 .row{display:grid;grid-template-columns:24px 8px 1fr;gap:9px;align-items:start;width:100%;
   background:none;border:0;padding:9px 4px 9px 0;text-align:left;font:inherit;color:var(--ink);cursor:pointer}
 .row:hover{background:var(--rule-fine)}
@@ -210,7 +204,7 @@ var camera=new THREE.PerspectiveCamera(40,1.6,0.1,600);
 function buildEnv(){
   var c=document.createElement("canvas");c.width=512;c.height=256;var g=c.getContext("2d");
   var gr=g.createLinearGradient(0,0,0,256);
-  gr.addColorStop(0,"#ffffff");gr.addColorStop(.5,"#e2e7ee");gr.addColorStop(1,"#9ba5b3");
+  gr.addColorStop(0,"#ffffff");gr.addColorStop(.5,"#dfe4eb");gr.addColorStop(1,"#8d97a6");
   g.fillStyle=gr;g.fillRect(0,0,512,256);
   var rg=g.createRadialGradient(150,50,0,150,50,135);
   rg.addColorStop(0,"rgba(255,255,255,.95)");rg.addColorStop(1,"rgba(255,255,255,0)");
@@ -220,19 +214,15 @@ function buildEnv(){
   var e=p.fromEquirectangular(t).texture;p.dispose();t.dispose();return e;
 }
 scene.environment=buildEnv();
-var key=new THREE.DirectionalLight(0xffffff,1.35);key.position.set(16,22,14);scene.add(key);
+var key=new THREE.DirectionalLight(0xffffff,1.55);key.position.set(16,22,14);scene.add(key);
 var fill=new THREE.DirectionalLight(0xc4d6ef,.45);fill.position.set(-18,-6,-12);scene.add(fill);
-scene.add(new THREE.AmbientLight(0xffffff,.40));
+scene.add(new THREE.AmbientLight(0xffffff,.34));
 
-function isDark(){var a=document.documentElement.getAttribute("data-theme");
-  if(a==="dark")return true; if(a==="light")return false;
-  return window.matchMedia("(prefers-color-scheme: dark)").matches;}
 function paintBg(){
   var cs=getComputedStyle(document.documentElement).getPropertyValue("--figure-bg").trim();
-  renderer.setClearColor(new THREE.Color(cs||"#EFF1F3"),1);
+  renderer.setClearColor(new THREE.Color(cs||"#FFFFFF"),1);
 }
 paintBg();
-window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change",paintBg);
 
 /* ── load the sculpt (guarded: a failure must not blank the legend) ── */
 var picks=[], anchors={}, loaded=false;
@@ -362,7 +352,7 @@ function layout(){
     }
   });
   leaders.setAttribute("viewBox","0 0 "+r.width+" "+r.height);
-  leaders.style.color=getComputedStyle(document.documentElement).getPropertyValue("--ink-2").trim();
+  leaders.style.color="#6D727A";
   leaders.innerHTML=lines;
 }
 

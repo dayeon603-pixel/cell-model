@@ -15,8 +15,8 @@
 
 <style>
 :root{
-  --scope:#F2F5F8; --ink:#101419; --ink-2:#4C5665; --ink-3:#7A8593;
-  --panel:rgba(255,255,255,.86); --panel-solid:#FFFFFF; --edge:rgba(16,20,25,.14); --edge-2:rgba(16,20,25,.28);
+  --scope:#FFFFFF; --ink:#101419; --ink-2:#4C5665; --ink-3:#7A8593;
+  --panel:rgba(255,255,255,.92); --panel-solid:#FFFFFF; --edge:rgba(16,20,25,.14); --edge-2:rgba(16,20,25,.28);
   --shadow:0 6px 28px rgba(16,24,40,.13);
   --membrane:#C94D71; --nucleus:#6F4FCC; --ribosome:#B0810C; --rer:#1F72B6;
   --ser:#0E8C7A; --golgi:#B96513; --mito:#2B8F40; --lysosome:#BC332F;
@@ -24,22 +24,7 @@
   --f-body:"Source Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --f-mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
 }
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --scope:#05070C; --ink:#EAEDF2; --ink-2:#9AA5B4; --ink-3:#6B7585;
-    --panel:rgba(12,16,24,.82); --panel-solid:#0E131C; --edge:rgba(234,237,242,.16); --edge-2:rgba(234,237,242,.32);
-    --shadow:0 6px 30px rgba(0,0,0,.55);
-    --membrane:#E86C89; --nucleus:#9575E8; --ribosome:#F5C654; --rer:#54A0DE;
-    --ser:#5BCFBD; --golgi:#F09547; --mito:#6BCB72; --lysosome:#E25C57;
-  }
-}
-:root[data-theme="dark"]{
-  --scope:#05070C; --ink:#EAEDF2; --ink-2:#9AA5B4; --ink-3:#6B7585;
-  --panel:rgba(12,16,24,.82); --panel-solid:#0E131C; --edge:rgba(234,237,242,.16); --edge-2:rgba(234,237,242,.32);
-  --shadow:0 6px 30px rgba(0,0,0,.55);
-  --membrane:#E86C89; --nucleus:#9575E8; --ribosome:#F5C654; --rer:#54A0DE;
-  --ser:#5BCFBD; --golgi:#F09547; --mito:#6BCB72; --lysosome:#E25C57;
-}
+
 
 *{box-sizing:border-box}
 body{margin:0; background:var(--scope); color:var(--ink); font-family:var(--f-body); -webkit-font-smoothing:antialiased; overflow:hidden}
@@ -823,11 +808,7 @@ var counters = {vesicles:0, atp:0, exo:0};
    THEME
    ══════════════════════════════════════════════════════════════ */
 var rootEl = document.documentElement, envL = null, envD = null, _c = new THREE.Color(), _hsl = {h:0,s:0,l:0};
-function isDark(){
-  var a = rootEl.getAttribute("data-theme");
-  if(a === "dark") return true; if(a === "light") return false;
-  return window.matchMedia("(prefers-color-scheme: dark)").matches;
-}
+function isDark(){ return false; }
 function applyTheme(){
   var dark = isDark(), cs = getComputedStyle(rootEl), i, m;
   if(dark){ if(!envD) envD = buildEnvironment(true); scene.environment = envD; }
