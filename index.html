@@ -215,8 +215,8 @@ function buildEnv(){
 }
 scene.environment=buildEnv();
 var key=new THREE.DirectionalLight(0xffffff,1.55);key.position.set(16,22,14);scene.add(key);
-var fill=new THREE.DirectionalLight(0xc4d6ef,.45);fill.position.set(-18,-6,-12);scene.add(fill);
-scene.add(new THREE.AmbientLight(0xffffff,.34));
+var fill=new THREE.DirectionalLight(0xc4d6ef,.38);fill.position.set(-18,-6,-12);scene.add(fill);
+scene.add(new THREE.AmbientLight(0xffffff,.24));
 
 function paintBg(){
   var cs=getComputedStyle(document.documentElement).getPropertyValue("--figure-bg").trim();
@@ -247,7 +247,18 @@ else new THREE.GLTFLoader().load("cell.glb",function(gltf){
   root.traverse(function(o){
     if(!o.isMesh)return;
     var k=keyFor(o.name);
-    if(o.material){o.material.side=THREE.DoubleSide;o.material.envMapIntensity=.5;}
+    if(o.material){
+      var m=o.material;
+      m.side=THREE.DoubleSide;
+      m.envMapIntensity=.34;
+      if(m.color && !m.userData.__tuned){
+        var hsl={h:0,s:0,l:0};
+        m.color.getHSL(hsl);
+        m.color.setHSL(hsl.h, Math.min(1,hsl.s*1.45), Math.max(.05,Math.min(.92,hsl.l*0.90)));
+        m.userData.__tuned=true;
+      }
+      if(m.roughness!==undefined) m.roughness=Math.min(1,m.roughness*0.85);
+    }
     if(!k)return;
     o.userData.key=k; picks.push(o);
     o.updateWorldMatrix(true,false);
@@ -259,7 +270,7 @@ else new THREE.GLTFLoader().load("cell.glb",function(gltf){
   Object.keys(boxes).forEach(function(k){ anchors[k]=boxes[k].getCenter(new THREE.Vector3()); });
   if(anchors["plasma_membrane"]) anchors["plasma_membrane"].set(-8.4,-2.0,-3.0);
   var sph=new THREE.Box3().setFromObject(root).getBoundingSphere(new THREE.Sphere());
-  var fit=sph.radius/Math.sin(camera.fov*Math.PI/360)*0.74;
+  var fit=sph.radius/Math.sin(camera.fov*Math.PI/360)*0.56;
   goal.r=fit; cam.r=fit*1.22;
   loaded=true;
   document.getElementById("boot").classList.add("gone");
