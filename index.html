@@ -289,7 +289,7 @@ function hitTest(e){
 
 /* ── dots stand in for the legend; the card appears only on demand ── */
 var dotHost=document.getElementById("dots"), pop=document.getElementById("pop"), hint=document.getElementById("hint");
-var dotEls={}, selected=null;
+var dotEls={}, selected=null, _v=new THREE.Vector3();
 ORG.forEach(function(o){
   var b=document.createElement("button");
   b.className="dot"; b.type="button"; b.style.setProperty("--c",o.c);
@@ -311,10 +311,24 @@ function select(k){
   pop.querySelector(".x").addEventListener("click",function(){select(null);});
   pop.classList.add("on");
   hint.classList.add("gone");
+  positionPop();
+}
+
+/* Placing the card must not depend on a frame having run: compute it now. */
+function positionPop(){
+  if(!selected || !anchors[selected]) return;
+  var r=canvas.getBoundingClientRect();
+  _v.copy(anchors[selected]).project(camera);
+  if(_v.z>1) return;
+  var x=(_v.x*.5+.5)*r.width, y=(-_v.y*.5+.5)*r.height;
+  var pw=pop.offsetWidth||302, ph=pop.offsetHeight||300;
+  var left = x < r.width*0.5 ? x+28 : x-pw-28;
+  left=Math.max(14,Math.min(Math.max(14,r.width-pw-14),left));
+  var top=Math.max(14,Math.min(Math.max(14,r.height-ph-14),y-ph*0.35));
+  pop.style.left=left+"px"; pop.style.top=top+"px";
 }
 document.addEventListener("keydown",function(e){ if(e.key==="Escape") select(null); });
 
-var _v=new THREE.Vector3();
 function layout(){
   if(!loaded)return;
   var r=canvas.getBoundingClientRect(), placed=[];
@@ -333,13 +347,7 @@ function layout(){
   placed.forEach(function(p){
     p.x=Math.max(12,Math.min(r.width-12,p.x)); p.y=Math.max(12,Math.min(r.height-12,p.y));
     p.el.style.left=p.x+"px"; p.el.style.top=p.y+"px"; p.el.classList.add("on");
-    if(p.o.k===selected){
-      var pw=pop.offsetWidth||300, ph=pop.offsetHeight||220;
-      var left = p.x < r.width*0.5 ? p.x+26 : p.x-pw-26;
-      left=Math.max(14,Math.min(r.width-pw-14,left));
-      var top=Math.max(14,Math.min(r.height-ph-14,p.y-ph*0.35));
-      pop.style.left=left+"px"; pop.style.top=top+"px";
-    }
+    if(p.o.k===selected) positionPop();
   });
 }
 
