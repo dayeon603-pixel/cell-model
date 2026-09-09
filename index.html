@@ -105,6 +105,18 @@ canvas:active{cursor:grabbing}
 .tool:active{transform:scale(.97)}
 .tool:hover{color:var(--ink);box-shadow:0 6px 20px rgba(18,24,38,.14), inset 0 1px 0 rgba(255,255,255,1)}
 
+.narr{position:absolute;left:50%;bottom:20px;transform:translateX(-50%) translateY(6px);
+  width:min(560px,calc(100% - 48px));padding:14px 18px 15px;border-radius:26px;overflow:hidden;
+  background:linear-gradient(150deg, rgba(255,255,255,.66), rgba(255,255,255,.40) 42%, rgba(255,255,255,.52));
+  -webkit-backdrop-filter:blur(26px) saturate(185%);backdrop-filter:blur(26px) saturate(185%);
+  border:1px solid rgba(255,255,255,.72);
+  box-shadow:0 16px 44px rgba(18,24,38,.16), inset 0 1px 0 rgba(255,255,255,.95);
+  opacity:0;pointer-events:none;transition:opacity .22s ease, transform .22s cubic-bezier(.2,.9,.25,1);z-index:4}
+.narr.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.narr b{display:block;font-family:var(--f-m);font-size:9px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink-3);margin-bottom:4px}
+.narr span{font-size:14px;line-height:1.5;color:var(--ink)}
+.tool[aria-pressed="true"]{color:var(--ink);box-shadow:0 0 0 1px rgba(21,23,27,.22) inset, 0 4px 14px rgba(18,24,38,.12)}
 .hint{position:absolute;left:24px;top:20px;font-family:var(--f-m);font-size:9.5px;letter-spacing:.12em;
   text-transform:uppercase;color:var(--ink-3);pointer-events:none;transition:opacity .4s}
 .hint.gone{opacity:0}
@@ -138,18 +150,21 @@ canvas:active{cursor:grabbing}
     <div id="dots"></div>
     <div class="pop" id="pop"></div>
     <div class="hint" id="hint">Select a dot</div>
+    <div class="narr" id="narr"></div>
     <div class="scale"><div class="bar" id="sbar" style="width:80px"></div><span id="sbarL">5 &#181;m</span></div>
     <div class="tools">
+      <button class="tool" id="bFollow" type="button" aria-pressed="false">Follow protein</button>
+      <button class="tool" id="bPause" type="button" aria-pressed="false">Pause</button>
+      <button class="tool" id="bSpeed" type="button">1.0&#215;</button>
       <button class="tool" id="bSpin" type="button" aria-pressed="true">Rotate</button>
       <button class="tool" id="bReset" type="button">Reset</button>
-      <a class="tool" href="live.html">Animated</a>
     </div>
     <div class="boot" id="boot">Loading&#8230;</div>
   </figure>
 
   <footer class="foot">
     <span>Fig. 1 &#183; Sagittal cutaway &#183; counts reduced for legibility</span>
-    <span class="r2">Blender 5.0 &#183; Cycles &#183; WebGL &#183; Dayeon Kang</span>
+    <span class="r2">Blender 5.0 &#183; Cycles &#183; live simulation &#183; Dayeon Kang</span>
   </footer>
 </div>
 
@@ -214,6 +229,10 @@ var fill=new THREE.DirectionalLight(0xc4d6ef,.38);fill.position.set(-18,-6,-12);
 scene.add(new THREE.AmbientLight(0xffffff,.24));
 
 var picks=[], anchors={}, loaded=false;
+var SIM={pores:[],rerBud:[],rerPts:[],golgi:[],mito:[],lyso:[],cellR:10};
+var _s=20260909;
+function rnd(){_s=(_s*1664525+1013904223)%4294967296;return _s/4294967296;}
+function rr(a,b){return a+rnd()*(b-a);}
 function keyFor(name){
   name=(name||"").toLowerCase();
   if(name.indexOf("plasma")>=0)return "plasma_membrane";
@@ -248,11 +267,29 @@ else new THREE.GLTFLoader().load("cell.glb",function(gltf){
     o.updateWorldMatrix(true,false);
     var b=new THREE.Box3().setFromObject(o);
     boxes[k]=boxes[k]?boxes[k].union(b):b;
+    /* anchors for the live systems, taken from the sculpt itself */
+    var nm=(o.name||"").toLowerCase(), c=b.getCenter(new THREE.Vector3());
+    if(nm.indexOf("torus")>=0) SIM.pores.push(c);
+    else if(nm.indexOf("rough_er")>=0){
+      SIM.rerBud.push(c);
+      var pa=o.geometry && o.geometry.attributes && o.geometry.attributes.position, tv=new THREE.Vector3();
+      if(pa) for(var vi=0; vi<pa.count; vi+=Math.max(1,Math.floor(pa.count/26))){
+        tv.fromBufferAttribute(pa,vi); SIM.rerPts.push(o.localToWorld(tv.clone()));
+      }
+    }
+    else if(nm.indexOf("golgi")>=0) SIM.golgi.push({n:o.name,c:c});
+    else if(nm.indexOf("mito_body")>=0) SIM.mito.push(c);
+    else if(nm.indexOf("lyso")>=0) SIM.lyso.push(c);
   });
   scene.add(root);
   Object.keys(boxes).forEach(function(k){ anchors[k]=boxes[k].getCenter(new THREE.Vector3()); });
   if(anchors["plasma_membrane"]) anchors["plasma_membrane"].set(-8.4,-2.0,-3.0);
   var sph=new THREE.Box3().setFromObject(root).getBoundingSphere(new THREE.Sphere());
+  SIM.cellR=sph.radius;
+  SIM.golgi.sort(function(a,b){return a.n<b.n?-1:1;});
+  if(SIM.golgi.length){ SIM.cis=SIM.golgi[0].c.clone(); SIM.trans=SIM.golgi[SIM.golgi.length-1].c.clone(); }
+  SIM.nuc=anchors["chromatin"]?anchors["chromatin"].clone():new THREE.Vector3();
+  buildSystems();
   var fit=sph.radius/Math.sin(camera.fov*Math.PI/360)*0.56;
   goal.r=fit; cam.r=fit*1.22;
   loaded=true;
@@ -366,6 +403,8 @@ function setSpin(v){spin=v;bSpin.setAttribute("aria-pressed",v?"true":"false");}
 bSpin.addEventListener("click",function(){setSpin(!spin);});
 document.getElementById("bReset").addEventListener("click",function(){
   goal.th=0.86;goal.ph=1.16;select(null);setSpin(true);
+  if(follow){document.getElementById("bFollow").click();}
+  cam.t.set(0,0,0);
 });
 
 function resize(){
@@ -375,14 +414,257 @@ function resize(){
 }
 window.addEventListener("resize",resize);resize();
 
+/* ══ living systems: the same simulation, running on the sculpt ══ */
+var PM={
+  atp:  new THREE.MeshBasicMaterial({color:0x3E8F55,transparent:true,opacity:.95}),
+  ion:  new THREE.MeshBasicMaterial({color:0x6E8296,transparent:true,opacity:.9}),
+  mrna: new THREE.MeshBasicMaterial({color:0x8C6AE0,transparent:true,opacity:.95}),
+  pept: new THREE.MeshBasicMaterial({color:0xB08A2E,transparent:true,opacity:.95})
+};
+var VM={
+  er:   new THREE.MeshStandardMaterial({color:0xC88AA4,roughness:.35,metalness:0}),
+  golgi:new THREE.MeshStandardMaterial({color:0xC8873C,roughness:.35,metalness:0}),
+  lyso: new THREE.MeshStandardMaterial({color:0xB4514C,roughness:.35,metalness:0})
+};
+var particles=[],vesicles=[],rings=[],TRANSLATORS=[],CHANNELS=[];
+var timers={er:1.5,golgi:3.0,ca:0.8,atp:0.35,mrna:2.4};
+var built=false;
+
+function buildSystems(){
+  if(built)return; built=true;
+  var i,j,dotGeo=new THREE.SphereGeometry(0.075,10,8);
+  for(i=0;i<170;i++){
+    var m=new THREE.Mesh(dotGeo,PM.atp); m.visible=false; scene.add(m);
+    particles.push({mesh:m,life:0,ttl:1,vel:new THREE.Vector3()});
+  }
+  var vg=new THREE.SphereGeometry(0.2,18,12);
+  for(i=0;i<16;i++){
+    var v=new THREE.Mesh(vg,VM.er); v.visible=false; scene.add(v);
+    vesicles.push({mesh:v,active:false,t:0,dur:1,curve:null,route:"",tracked:false});
+  }
+  var rg=new THREE.RingGeometry(0.12,0.2,26);
+  for(i=0;i<8;i++){
+    var r=new THREE.Mesh(rg,new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0,side:THREE.DoubleSide}));
+    r.visible=false; scene.add(r); rings.push({mesh:r,life:0});
+  }
+  /* ribosomes translating along a strand of mRNA on the ER */
+  for(i=0;i<6 && SIM.rerPts.length;i++){
+    var host=SIM.rerPts[Math.floor(rnd()*SIM.rerPts.length)];
+    var dir=host.clone().sub(SIM.nuc).normalize();
+    var perp=new THREE.Vector3(-dir.z,.3,dir.x).normalize();
+    var cv=new THREE.CatmullRomCurve3([
+      host.clone().add(perp.clone().multiplyScalar(-0.9)),
+      host.clone().add(perp.clone().multiplyScalar(-0.2)).add(new THREE.Vector3(0,.18,0)),
+      host.clone().add(perp.clone().multiplyScalar(0.5)),
+      host.clone().add(perp.clone().multiplyScalar(1.1)).add(new THREE.Vector3(0,-.12,0))]);
+    var strand=new THREE.Mesh(new THREE.TubeGeometry(cv,36,.032,6,false),PM.mrna); scene.add(strand);
+    var ribo=new THREE.Mesh(new THREE.SphereGeometry(.13,14,10),
+      new THREE.MeshStandardMaterial({color:0x7A6A55,roughness:.5})); scene.add(ribo);
+    var chain=[];
+    for(j=0;j<7;j++){var c2=new THREE.Mesh(new THREE.SphereGeometry(.052,8,6),PM.pept);c2.visible=false;scene.add(c2);chain.push(c2);}
+    TRANSLATORS.push({curve:cv,ribo:ribo,chain:chain,t:rnd(),speed:rr(.05,.09)});
+  }
+  /* ion channels seated on the cell surface */
+  for(i=0;i<14;i++){
+    var b=Math.acos(1-2*rnd()),a=rnd()*6.283;
+    var d=new THREE.Vector3(Math.sin(b)*Math.cos(a),Math.cos(b),Math.sin(b)*Math.sin(a));
+    CHANNELS.push({pos:d.clone().multiplyScalar(SIM.cellR*.94),dir:d,next:rnd()*3});
+  }
+}
+function surfacePoint(d){ return d.clone().normalize().multiplyScalar(SIM.cellR*0.94); }
+function emit(pos,kind,vel,ttl,size){
+  for(var i=0;i<particles.length;i++){var p=particles[i];
+    if(p.life>0)continue;
+    p.mesh.material=PM[kind];p.mesh.position.copy(pos);p.mesh.scale.setScalar(size||1);
+    p.mesh.visible=true;p.vel.copy(vel);p.ttl=ttl;p.life=ttl;return p;}
+  return null;
+}
+function launch(curve,dur,matKey,route,tracked){
+  for(var i=0;i<vesicles.length;i++){var v=vesicles[i];
+    if(v.active)continue;
+    v.curve=curve;v.dur=dur;v.t=0;v.active=true;v.route=route;v.tracked=!!tracked;
+    v.mesh.material=VM[matKey];v.mesh.scale.setScalar(tracked?1.35:1);v.mesh.visible=true;return v;}
+  return null;
+}
+function wobble(a,b,amp){
+  var mid=a.clone().lerp(b,.5);
+  mid.x+=(rnd()-.5)*amp;mid.y+=(rnd()-.5)*amp;mid.z+=(rnd()-.5)*amp;
+  return new THREE.CatmullRomCurve3([a.clone(),mid,b.clone()]);
+}
+function flash(pos,color){
+  for(var i=0;i<rings.length;i++){var r=rings[i];
+    if(r.life>0)continue;
+    r.mesh.position.copy(pos);r.mesh.lookAt(camera.position);
+    r.mesh.material.color.setHex(color);r.mesh.material.opacity=.9;
+    r.mesh.scale.setScalar(.6);r.mesh.visible=true;r.life=1;return;}
+}
+
+var follow=false,followVes=null,followHold=0,followEnd=0,narrKey="",paused=false,rate=1.0;
+var narr=document.getElementById("narr");
+function narrate(h,b){
+  var k=h+b; if(k===narrKey)return; narrKey=k;
+  narr.innerHTML="<b>"+h+"</b><span>"+b+"</span>"; narr.classList.add("on");
+}
+function narrateOff(){narrKey="";narr.classList.remove("on");}
+
+var tmpA=new THREE.Vector3(),tmpB=new THREE.Vector3();
+function simulate(dt,now){
+  var i,j,p,v,t,c;
+  /* mitochondria release ATP */
+  timers.atp-=dt/1000;
+  if(timers.atp<=0 && SIM.mito.length){
+    timers.atp=0.22;
+    tmpA.copy(SIM.mito[Math.floor(rnd()*SIM.mito.length)]);
+    tmpB.set(rnd()-.5,rnd()-.5,rnd()-.5).normalize().multiplyScalar(0.9);
+    emit(tmpA,"atp",tmpB,2.2,0.85);
+  }
+  /* mRNA leaves through the nuclear pores */
+  timers.mrna-=dt/1000;
+  if(timers.mrna<=0 && SIM.pores.length){
+    timers.mrna=1.9;
+    tmpA.copy(SIM.pores[Math.floor(rnd()*SIM.pores.length)]);
+    tmpB.copy(tmpA).sub(SIM.nuc).normalize().multiplyScalar(1.1);
+    emit(tmpA,"mrna",tmpB,2.6,1.15);
+  }
+  /* ribosomes translate */
+  for(i=0;i<TRANSLATORS.length;i++){
+    t=TRANSLATORS[i]; t.t+=dt/1000*t.speed;
+    if(t.t>=1){ t.t=0;
+      emit(t.ribo.position,"pept",new THREE.Vector3(rnd()-.5,rnd()*.6,rnd()-.5).normalize().multiplyScalar(.7),1.6,.9);
+    }
+    t.ribo.position.copy(t.curve.getPointAt(t.t));
+    for(j=0;j<t.chain.length;j++){
+      c=t.chain[j];
+      if((j+1)/t.chain.length<=t.t+0.02){
+        c.visible=true; c.position.copy(t.ribo.position);
+        c.position.y+=0.20+j*0.11;
+        c.position.x+=Math.sin(now*0.002+j)*0.05;
+        c.position.z+=Math.cos(now*0.0018+j)*0.05;
+      } else c.visible=false;
+    }
+  }
+  /* ion channels */
+  for(i=0;i<CHANNELS.length;i++){
+    c=CHANNELS[i]; c.next-=dt/1000;
+    if(c.next<=0){ c.next=rr(1.4,3.6);
+      var inward=rnd()>0.45;
+      tmpA.copy(c.pos).multiplyScalar(inward?1.06:0.94);
+      tmpB.copy(c.dir).multiplyScalar(inward?-0.85:0.85);
+      emit(tmpA,"ion",tmpB,1.7,0.8);
+    }
+  }
+  /* vesicle traffic: ER -> Golgi -> surface or lysosome */
+  timers.er-=dt/1000;
+  if(timers.er<=0 && SIM.rerBud.length && SIM.cis){
+    timers.er=rr(1.1,2.0);
+    var from=SIM.rerBud[Math.floor(rnd()*SIM.rerBud.length)];
+    var tracked=follow&&!followVes&&followHold<=0&&followEnd<=0;
+    v=launch(wobble(from,SIM.cis,2.4),rr(3.4,4.6),"er","er2golgi",tracked);
+    if(v&&tracked)followVes=v;
+  }
+  timers.golgi-=dt/1000;
+  if(timers.golgi<=0 && SIM.trans){
+    timers.golgi=rr(1.6,2.6);
+    if(rnd()>0.4){
+      var d2=new THREE.Vector3(rr(-.3,1),rr(.2,1),rr(-.6,1)).normalize();
+      launch(wobble(SIM.trans,surfacePoint(d2),3.0),rr(4.0,5.4),"golgi","golgi2mem",false);
+    }else if(SIM.lyso.length){
+      launch(wobble(SIM.trans,SIM.lyso[Math.floor(rnd()*SIM.lyso.length)],2.4),rr(3.2,4.4),"lyso","golgi2lyso",false);
+    }
+  }
+  for(i=0;i<vesicles.length;i++){
+    v=vesicles[i]; if(!v.active)continue;
+    v.t+=(dt/1000)/v.dur;
+    if(v.t>=1){
+      v.active=false;v.mesh.visible=false;
+      tmpA.copy(v.curve.getPointAt(1));
+      if(v.route==="golgi2mem")flash(tmpA,0x6E8296);
+      else if(v.route==="golgi2lyso")flash(tmpA,0xB4514C);
+      else flash(tmpA,0xC8873C);
+      if(v===followVes){followVes=null;
+        if(v.route==="er2golgi")followHold=3.4; else if(v.route==="golgi2mem")followEnd=3.2;}
+      continue;
+    }
+    v.mesh.position.copy(v.curve.getPointAt(v.t));
+    v.mesh.scale.setScalar((v.tracked?1.35:1)*(1+0.06*Math.sin(now*0.006+i)));
+  }
+  /* follow one protein */
+  if(follow){
+    if(followVes&&followVes.active){
+      t=followVes.t;
+      if(followVes.route==="er2golgi"){
+        if(t<0.22)narrate("2 \u00B7 Budding","The folded protein is packed into a transport vesicle and pinched off the rough ER.");
+        else if(t<0.78)narrate("3 \u00B7 Transport","The vesicle crosses the cytosol, carried along cytoskeletal tracks toward the Golgi.");
+        else narrate("4 \u00B7 Arrival","It fuses with the cis face of the Golgi and empties its cargo into the first cisterna.");
+      }else if(followVes.route==="golgi2mem"){
+        if(t<0.2)narrate("6 \u00B7 Shipping","Sorted and addressed, the protein buds from the trans face in a secretory vesicle.");
+        else if(t<0.82)narrate("7 \u00B7 To the surface","The vesicle travels outward to the plasma membrane.");
+        else narrate("8 \u00B7 Exocytosis","The vesicle membrane merges with the cell membrane and the protein is released outside.");
+      }
+    }else if(followHold>0){
+      followHold-=dt/1000;
+      narrate("5 \u00B7 Sorting","Moving cis to trans through the stack: sugar chains are trimmed and rebuilt, and a destination tag is attached.");
+      if(followHold<=0&&SIM.trans){
+        var od=new THREE.Vector3(rr(.1,1),rr(.3,1),rr(-.3,.9)).normalize();
+        followVes=launch(wobble(SIM.trans,surfacePoint(od),2.6),6.0,"golgi","golgi2mem",true);
+      }
+    }else if(followEnd>0){
+      followEnd-=dt/1000;
+      narrate("Delivered","One protein, four compartments: nucleus \u2192 ribosome \u2192 rough ER \u2192 Golgi \u2192 outside the cell. Watching for the next one.");
+    }else{
+      narrate("1 \u00B7 Waiting","Watching the rough ER for the next protein to finish folding.");
+    }
+  }
+  /* particles and rings */
+  for(i=0;i<particles.length;i++){
+    p=particles[i]; if(p.life<=0)continue;
+    p.life-=dt/1000;
+    if(p.life<=0){p.mesh.visible=false;continue;}
+    p.mesh.position.addScaledVector(p.vel,dt/1000);
+    p.vel.multiplyScalar(1-0.6*dt/1000);
+    p.mesh.scale.setScalar(0.6+0.5*Math.min(1,p.life/p.ttl));
+  }
+  for(i=0;i<rings.length;i++){
+    var rr2=rings[i]; if(rr2.life<=0)continue;
+    rr2.life-=dt/620;
+    if(rr2.life<=0){rr2.mesh.visible=false;continue;}
+    rr2.mesh.scale.setScalar(0.6+(1-rr2.life)*5.2);
+    rr2.mesh.material.opacity=rr2.life*0.85;
+    rr2.mesh.lookAt(camera.position);
+  }
+}
+
+document.getElementById("bFollow").addEventListener("click",function(){
+  follow=!follow; this.setAttribute("aria-pressed",follow?"true":"false");
+  if(follow){ select(null); setSpin(false); narrate("1 \u00B7 Waiting","Watching the rough ER for the next protein to finish folding."); }
+  else { if(followVes){followVes.tracked=false;followVes.mesh.scale.setScalar(1);} 
+         followVes=null;followHold=0;followEnd=0;narrateOff(); }
+});
+document.getElementById("bPause").addEventListener("click",function(){
+  paused=!paused; this.setAttribute("aria-pressed",paused?"true":"false");
+  this.textContent=paused?"Resume":"Pause";
+});
+var RATES=[0.5,1.0,2.0];
+document.getElementById("bSpeed").addEventListener("click",function(){
+  rate=RATES[(RATES.indexOf(rate)+1)%RATES.length];
+  this.textContent=rate.toFixed(1)+"\u00D7";
+});
+
 var prev=performance.now();
 (function tick(now){
   requestAnimationFrame(tick);
-  var dt=Math.min(now-prev,64);prev=now;
-  if(spin&&!drag&&!selected)goal.th+=dt*0.00006;
-  var e=1-Math.pow(0.0025,dt/1000);
+  var raw=Math.min(now-prev,64);prev=now;
+  var dt=paused?0:raw*rate;
+  if(spin&&!drag&&!selected&&!follow)goal.th+=raw*0.00006;
+  if(follow&&followVes&&followVes.active){
+    cam.t.lerp(followVes.mesh.position,0.06);
+    goal.r+=(SIM.cellR*1.15-goal.r)*0.04;
+  }else if(!follow){ cam.t.lerp(new THREE.Vector3(0,0,0),0.06); }
+  var e=1-Math.pow(0.0025,raw/1000);
   cam.th+=(goal.th-cam.th)*e;cam.ph+=(goal.ph-cam.ph)*e;cam.r+=(goal.r-cam.r)*e;
-  place();layout();scaleBar();
+  place();
+  if(loaded&&dt>0)simulate(dt,now);
+  layout();scaleBar();
   renderer.render(scene,camera);
 })(prev);
 })();
